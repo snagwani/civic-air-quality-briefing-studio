@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
 import { getServerConfig } from './config.js';
 import { enforceApiSecurity } from './security.js';
+import { ServerResponseCache, hashRequestKey } from './serverCache.js';
 import {
   AnalyzePayloadSchema,
   GenerateBriefPayloadSchema,
@@ -25,7 +26,7 @@ export {
  * @param text - Raw response text from Gemini
  * @returns Parsed JSON value
  */
-function extractCleanJson(text: string): unknown {
+export function extractCleanJson(text: string): unknown {
   const trimmed = text.trim();
   const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   return JSON.parse(fencedMatch ? fencedMatch[1].trim() : trimmed);
@@ -39,7 +40,7 @@ function extractCleanJson(text: string): unknown {
  * @param meta - Request mode and requested language/readingLevel (echoed, not guessed)
  * @returns Normalized JSON object ready for Zod schema parsing
  */
-function normalizeRawGeminiJson(
+export function normalizeRawGeminiJson(
   raw: unknown,
   meta: { mode: 'analyze' | 'brief'; language?: string; readingLevel?: string }
 ): unknown {
@@ -118,7 +119,7 @@ function normalizeRawGeminiJson(
  * @param requireOne - Whether at least one valid citation is mandatory
  * @returns Valid cited row IDs
  */
-function keepValidCitations(ids: string[], validRowSet: Set<string>, requireOne: boolean): string[] {
+export function keepValidCitations(ids: string[], validRowSet: Set<string>, requireOne: boolean): string[] {
   const filtered = ids.filter((id) => validRowSet.has(id));
   if (requireOne && filtered.length === 0) {
     throw new Error('A finding cited no valid row IDs from the submitted dataset.');
@@ -131,7 +132,7 @@ function keepValidCitations(ids: string[], validRowSet: Set<string>, requireOne:
  * @param err - Error thrown by the Gemini SDK, or its message string
  * @returns True when the error is a temporary overload or quota spike
  */
-function isTransientUpstreamError(err: unknown): boolean {
+export function isTransientUpstreamError(err: unknown): boolean {
   const text = err instanceof Error ? err.message : String(err);
   return /"code":\s*(503|429)|UNAVAILABLE|RESOURCE_EXHAUSTED/i.test(text);
 }
@@ -168,6 +169,8 @@ async function generateWithTransientRetry(
   }
 }
 
+const responseCache = new ServerResponseCache<Record<string, unknown>>(50, 10 * 60 * 1000);
+
 /**
  * Serverless API handler for authenticated, rate-limited, Zod-validated Gemini analysis and brief generation.
  * @param req - Incoming Vercel serverless request
@@ -199,6 +202,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const payload = parsedPayload.data;
+  const cacheKey = hashRequestKey(JSON.stringify(payload));
+  const cachedBody = responseCache.get(cacheKey);
+  if (cachedBody) {
+    return res.status(200).json({ ...cachedBody, cached: true });
+  }
   const validRowSet = new Set(payload.rows.map((r) => r.rowId));
   const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
   const prompt = payload.mode === 'analyze' ? buildAnalyzePrompt(payload) : buildBriefPrompt(payload);
@@ -220,7 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (payload.mode === 'analyze') {
         const validated = GeminiAnalysisOutputSchema.parse(jsonObj);
-        return res.status(200).json({
+        const body = {
           ok: true,
           attempt,
           data: {
@@ -229,10 +237,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             hotspots: validated.hotspots.map((h) => ({ ...h, citedRowIds: keepValidCitations(h.citedRowIds, validRowSet, true) })),
             actions: validated.actions.map((a) => ({ ...a, citedRowIds: keepValidCitations(a.citedRowIds, validRowSet, true) })),
           },
-        });
+        };
+        responseCache.set(cacheKey, body);
+        return res.status(200).json(body);
       } else {
         const validated = GeminiBriefOutputSchema.parse(jsonObj);
-        return res.status(200).json({
+        const body = {
           ok: true,
           attempt,
           data: {
@@ -246,7 +256,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               citedRowIds: keepValidCitations(validated.citizenAdvisory.citedRowIds, validRowSet, false),
             },
           },
-        });
+        };
+        responseCache.set(cacheKey, body);
+        return res.status(200).json(body);
       }
     } catch (err: unknown) {
       lastError = err instanceof Error ? err.message : String(err);

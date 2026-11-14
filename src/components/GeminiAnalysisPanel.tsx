@@ -90,6 +90,7 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
     <section
       aria-labelledby="gemini-analysis-heading"
       aria-live="polite"
+      aria-busy={isLoading}
       className="bg-[#101018]/95 rounded-2xl border border-zinc-800/90 border-t-2 border-t-rose-600 shadow-[0_12px_40px_rgba(0,0,0,0.65)] p-5 sm:p-6 space-y-6"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-800/80">

@@ -1,26 +1,28 @@
 import { z } from 'zod';
 
 const CleanedRowInputSchema = z.object({
-  rowId: z.string(),
-  rawStation: z.string(),
-  ward: z.string(),
-  normalizedTimestamp: z.string().nullable(),
+  rowId: z.string().max(16),
+  rawStation: z.string().max(200),
+  ward: z.string().max(200),
+  normalizedTimestamp: z.string().max(64).nullable(),
   pm25UgM3: z.number().nullable(),
   pm10UgM3: z.number().nullable(),
   no2UgM3: z.number().nullable(),
   so2UgM3: z.number().nullable(),
   aqi: z.number().nullable(),
-  aqiCategory: z.string(),
-  dominantPollutant: z.string(),
+  aqiCategory: z.string().max(40),
+  dominantPollutant: z.string().max(20),
   isReliable: z.boolean(),
-  issues: z.array(
-    z.object({
-      type: z.string(),
-      field: z.string(),
-      message: z.string(),
-      severity: z.string(),
-    })
-  ),
+  issues: z
+    .array(
+      z.object({
+        type: z.string().max(40),
+        field: z.string().max(40),
+        message: z.string().max(600),
+        severity: z.string().max(20),
+      })
+    )
+    .max(50),
 });
 
 export const AnalyzePayloadSchema = z.object({
@@ -38,30 +40,34 @@ export const GenerateBriefPayloadSchema = z.object({
   hasEnoughReliableData: z.boolean(),
   rows: z.array(CleanedRowInputSchema).min(1).max(500),
   analysisSummary: z.object({
-    overallAssessment: z.string(),
-    hotspots: z.array(
-      z.object({
-        location: z.string(),
-        severity: z.string(),
-        likelyCause: z.string(),
-        citedRowIds: z.array(z.string()),
-      })
-    ),
-    actions: z.array(
-      z.object({
-        audience: z.string(),
-        priority: z.string(),
-        action: z.string(),
-        citedRowIds: z.array(z.string()),
-      })
-    ),
+    overallAssessment: z.string().max(8000),
+    hotspots: z
+      .array(
+        z.object({
+          location: z.string().max(300),
+          severity: z.string().max(40),
+          likelyCause: z.string().max(2000),
+          citedRowIds: z.array(z.string().max(16)).max(100),
+        })
+      )
+      .max(50),
+    actions: z
+      .array(
+        z.object({
+          audience: z.string().max(60),
+          priority: z.string().max(60),
+          action: z.string().max(3000),
+          citedRowIds: z.array(z.string().max(16)).max(100),
+        })
+      )
+      .max(50),
   }),
   previousBriefSummary: z
     .object({
-      label: z.string(),
+      label: z.string().max(300),
       averageAqi: z.number().nullable(),
       peakAqi: z.number().nullable(),
-      hotspotLocations: z.array(z.string()),
+      hotspotLocations: z.array(z.string().max(300)).max(50),
     })
     .nullable()
     .optional(),

@@ -2,6 +2,12 @@ import React, { memo } from 'react';
 import { FileText, Megaphone, Baby, HeartPulse, UserCheck } from 'lucide-react';
 import type { GeminiBriefResponse } from '../types/airQuality';
 
+const LANG_TAGS: Record<GeminiBriefResponse['language'], string> = {
+  English: 'en-IN',
+  Hindi: 'hi',
+  Marathi: 'mr',
+};
+
 interface BriefDocumentCardsProps {
   brief: GeminiBriefResponse;
   onSelectRowId: (rowId: string) => void;
@@ -39,7 +45,7 @@ export const BriefDocumentCards: React.FC<BriefDocumentCardsProps> = memo(
     );
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div lang={LANG_TAGS[brief.language]} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <article className="rounded-xl border border-zinc-800 bg-[#090910] p-5 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-300">

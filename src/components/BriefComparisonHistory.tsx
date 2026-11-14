@@ -153,6 +153,9 @@ export const BriefComparisonHistory: React.FC<BriefComparisonHistoryProps> = mem
 
             <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-[#101018]">
               <table className="w-full text-left border-collapse text-xs">
+                <caption className="sr-only">
+                  Ward-by-ward average AQI change between the previous and current brief
+                </caption>
                 <thead>
                   <tr className="bg-zinc-900 text-zinc-200 border-b border-zinc-800 font-mono uppercase">
                     <th scope="col" className="py-2.5 px-3 font-bold">Ward</th>

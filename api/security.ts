@@ -87,6 +87,18 @@ export function verifyRequestAuthToken(req: VercelRequest, expectedToken: string
 }
 
 /**
+ * Detects browser-initiated cross-site requests using the Fetch Metadata header.
+ * Same-origin app calls and non-browser clients (no header) are unaffected.
+ *
+ * @param req - Incoming Vercel serverless request
+ * @returns True when the browser marks the request as cross-site
+ */
+export function isCrossSiteRequest(req: VercelRequest): boolean {
+  const site = req.headers['sec-fetch-site'];
+  return typeof site === 'string' && site.toLowerCase() === 'cross-site';
+}
+
+/**
  * Applies defensive HTTP security headers, enforces Bearer token authentication (HTTP 401),
  * and enforces sliding-window IP rate limiting (HTTP 429) on serverless endpoints.
  *
@@ -107,6 +119,12 @@ export function enforceApiSecurity(
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+
+  if (isCrossSiteRequest(req)) {
+    res.status(403).json({ error: 'Forbidden: cross-site requests are not allowed.' });
+    return false;
+  }
 
   if (!verifyRequestAuthToken(req, options.expectedToken)) {
     res.status(401).json({

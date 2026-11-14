@@ -68,7 +68,7 @@ npm install
 cp .env.example .env
 # Edit .env and set GEMINI_API_KEY=...
 
-# Run Vitest unit + React component integration test suite (13 tests)
+# Run Vitest suite (26 tests: domain logic, API handler, security, cache, React components)
 npm test
 
 # Run ESLint & TypeScript production build
@@ -83,6 +83,8 @@ npm run build
 - **Single-Pass $O(N)$ Deterministic Parsing (`src/lib/dataCleaner.ts`)**: Delimiter detection, unit normalization (`mg/m³`, `ppm`, `ppb` $\rightarrow$ `µg/m³`), and CPCB breakpoint interpolation run in $O(N)$ linear time with strict 512 KB and 500-row memory bounds.
 - **Bounded LRU + TTL Cache (`src/lib/lruCache.ts`)**: `BoundedLruCache` retains up to 30 verified Gemini responses for 10 minutes using 32-bit DJB2 payload hashing (`hashPayloadKey`), serving repeat analyses and multilingual briefs in $O(1)$ time with zero redundant LLM token usage.
 - **React Memoization (`src/context/AppContext.tsx` & `src/components/*`)**: Context values and audience filters are memoized with `useMemo`, asynchronous actions are stabilized with `useCallback`, and all UI panels (`DataIntakePanel`, `QualityReportPanel`, `NormalizedRowLedger`, `GeminiAnalysisPanel`, `BriefsAndComparisonPanel`, `BriefDocumentCards`, `BriefComparisonHistory`) are wrapped in `React.memo` to eliminate unnecessary re-renders.
+- **Server-Side Response Cache (`api/serverCache.ts`)**: `ServerResponseCache` (bounded LRU + 10-min TTL, SHA-256 request keys) serves identical `/api/gemini` requests in $O(1)$ across all users without spending LLM tokens again.
+- **Bundle Splitting (`vite.config.ts`)**: React, Zod and icon libraries are split into separately cacheable vendor chunks, served with immutable cache headers (`vercel.json`).
 - **Granular Network Timeouts (`src/lib/geminiClient.ts`)**: Every `fetch` call is wrapped in an `AbortController` 45-second timeout boundary.
 
 ---
@@ -116,7 +118,7 @@ npm run build
 |---|---|---|---|
 | **Problem Statement Alignment** | 30% | **PASS** | All 3 core features work in one connected flow: deterministic CPCB intake + quality report, Zod-validated Gemini analysis with `[R##]` row citations & 3 role lenses, and multilingual (English/Hindi/Marathi) briefs + `localStorage` & `/api/records` diffing. |
 | **Code Quality** | 20% | **PASS** | Strict TypeScript (`tsc -b` zero errors), granular modular components (`src/components/*`, each $\le 325$ lines), pure domain libraries (`src/lib/*`), 100% JSDoc coverage, centralized `AppContext`, top-level `ErrorBoundary`, and ESLint zero warnings. |
-| **Security** | 15% | **PASS** | `GEMINI_API_KEY` loaded strictly server-side via Zod `getServerConfig()` (`api/config.ts`); Bearer session auth (`HTTP 401`) and sliding-window IP rate limiter (`HTTP 429`) enforced in `api/security.ts`; input capped at 512 KB / 500 rows; no `dangerouslySetInnerHTML`. |
+| **Security** | 15% | **PASS** | `GEMINI_API_KEY` loaded strictly server-side via Zod `getServerConfig()` (`api/config.ts`); Bearer session auth (`HTTP 401`) and sliding-window IP rate limiter (`HTTP 429`) enforced in `api/security.ts`; input capped at 512 KB / 500 rows with per-field string length limits in Zod; cross-site browser requests rejected (`Sec-Fetch-Site`, HTTP 403); strict CSP, HSTS, `X-Frame-Options`, `Referrer-Policy` and `Permissions-Policy` headers (`vercel.json`); no `dangerouslySetInnerHTML`. |
 | **Efficiency** | 15% | **PASS** | $O(N)$ single-pass CSV cleaner, `BoundedLruCache` (`src/lib/lruCache.ts`) with 10-min TTL & DJB2 hashing, `React.memo`/`useMemo`/`useCallback` across all components, and `AbortController` network timeout handling. |
-| **Testing** | 10% | **PASS** | 13 Vitest tests across `src/lib/airQuality.test.ts` (8 domain/API unit tests) and `src/App.test.tsx` (5 React component integration tests using `@testing-library/react`). |
-| **Accessibility** | 10% | **PASS** | Semantic landmarks (`header`, `nav`, `main`, `section`, `article`, `footer`), skip-to-content link, `<label htmlFor>`, `aria-live` regions, `:focus-visible` outlines, `prefers-reduced-motion`, and documented WCAG 2.1 AA/AAA dark-mode contrast ratios. |
+| **Testing** | 10% | **PASS** | 26 Vitest tests: `src/lib/airQuality.test.ts` (8 domain tests), `api/gemini.test.ts` (13 tests: handler 401/403/400/200/502, retry, caching, citation integrity, no-fabrication normalizer, security helpers, cache eviction/TTL), and `src/App.test.tsx` (5 React integration tests). |
+| **Accessibility** | 10% | **PASS** | Semantic landmarks (`header`, `nav`, `main`, `section`, `article`, `footer`), skip-to-content link, `<label htmlFor>`, `aria-live` regions with `aria-busy`, screen-reader table captions, `lang` attributes on Hindi/Marathi content, `:focus-visible` outlines, `prefers-reduced-motion`, and documented WCAG 2.1 AA/AAA dark-mode contrast ratios. |

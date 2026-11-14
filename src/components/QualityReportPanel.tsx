@@ -162,6 +162,9 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
         </h3>
         <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-[#090910]">
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
+            <caption className="sr-only">
+              Station and ward reliability scorecard with average AQI, peak AQI, CPCB hazard band and trust score
+            </caption>
             <thead>
               <tr className="bg-zinc-900/90 text-zinc-200 border-b border-zinc-800 font-mono text-xs uppercase">
                 <th scope="col" className="py-3 px-3 font-bold">Ward</th>

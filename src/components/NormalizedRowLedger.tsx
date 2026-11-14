@@ -34,6 +34,9 @@ export const NormalizedRowLedger: React.FC<NormalizedRowLedgerProps> = memo(
 
         <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-[#090910] max-h-96">
           <table className="w-full text-left border-collapse text-xs">
+            <caption className="sr-only">
+              Normalized sensor readings in micrograms per cubic metre with CPCB AQI and data-quality flags per row ID
+            </caption>
             <thead className="sticky top-0 bg-zinc-900 text-zinc-200 border-b border-zinc-800 z-10 font-mono uppercase">
               <tr>
                 <th scope="col" className="py-2.5 px-2.5 font-bold">Row ID</th>
