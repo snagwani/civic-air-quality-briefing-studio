@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
-import { getServerConfig } from './config';
-import { enforceApiSecurity } from './security';
+import { getServerConfig } from './config.js';
+import { enforceApiSecurity } from './security.js';
 import {
   AnalyzePayloadSchema,
   GenerateBriefPayloadSchema,
@@ -10,7 +10,7 @@ import {
   GeminiBriefOutputSchema,
   buildAnalyzePrompt,
   buildBriefPrompt,
-} from './prompts';
+} from './prompts.js';
 
 export {
   AnalyzePayloadSchema,

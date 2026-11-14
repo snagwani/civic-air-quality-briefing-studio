@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { getServerConfig } from './config';
-import { enforceApiSecurity } from './security';
+import { getServerConfig } from './config.js';
+import { enforceApiSecurity } from './security.js';
 
 const StoredBriefSchema = z.object({
   id: z.string(),
