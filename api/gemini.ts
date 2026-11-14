@@ -170,6 +170,14 @@ async function generateWithTransientRetry(
 }
 
 const responseCache = new ServerResponseCache<Record<string, unknown>>(50, 10 * 60 * 1000);
+let cachedGenAiClient: { apiKey: string; client: GoogleGenAI } | null = null;
+
+function getGenAiClient(apiKey: string): GoogleGenAI {
+  if (!cachedGenAiClient || cachedGenAiClient.apiKey !== apiKey) {
+    cachedGenAiClient = { apiKey, client: new GoogleGenAI({ apiKey }) };
+  }
+  return cachedGenAiClient.client;
+}
 
 /**
  * Serverless API handler for authenticated, rate-limited, Zod-validated Gemini analysis and brief generation.
@@ -208,7 +216,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ...cachedBody, cached: true });
   }
   const validRowSet = new Set(payload.rows.map((r) => r.rowId));
-  const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+  const ai = getGenAiClient(config.geminiApiKey);
   const prompt = payload.mode === 'analyze' ? buildAnalyzePrompt(payload) : buildBriefPrompt(payload);
   let lastError = 'Unknown validation error';
 

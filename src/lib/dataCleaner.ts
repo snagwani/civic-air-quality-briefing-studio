@@ -31,21 +31,35 @@ const MOLAR_VOLUME = 24.45;
 const MW_NO2 = 46.0055;
 const MW_SO2 = 64.066;
 
+const DMY_REGEX = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
+const YMD_REGEX =
+  /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+const NUMERIC_CELL_REGEX = /^([+-]?\d+(?:\.\d+)?)\s*([a-zA-Zµμ/³3]+)?$/;
+const WARD_REGEX = /(ward\s*[a-z0-9-]+|sector\s*\d+|zone\s*[a-z0-9-]+)/i;
+
 /**
- * Detects the dominant field delimiter (comma, tab, semicolon, or pipe) from a header line.
+ * Detects the dominant field delimiter (comma, tab, semicolon, or pipe) from a header line in a single O(L) pass.
  *
  * @param headerLine - First non-empty line of the raw table
  * @returns Detected delimiter character
  */
 function detectDelimiter(headerLine: string): string {
-  const counts: Array<{ char: string; count: number }> = [
-    { char: ',', count: (headerLine.match(/,/g) || []).length },
-    { char: '\t', count: (headerLine.match(/\t/g) || []).length },
-    { char: ';', count: (headerLine.match(/;/g) || []).length },
-    { char: '|', count: (headerLine.match(/\|/g) || []).length },
-  ];
-  counts.sort((a, b) => b.count - a.count);
-  return counts[0].count > 0 ? counts[0].char : ',';
+  let commas = 0;
+  let tabs = 0;
+  let semis = 0;
+  let pipes = 0;
+  for (let i = 0; i < headerLine.length; i++) {
+    const ch = headerLine[i];
+    if (ch === ',') commas++;
+    else if (ch === '\t') tabs++;
+    else if (ch === ';') semis++;
+    else if (ch === '|') pipes++;
+  }
+  const max = Math.max(commas, tabs, semis, pipes);
+  if (max === 0 || max === commas) return ',';
+  if (max === tabs) return '\t';
+  if (max === semis) return ';';
+  return '|';
 }
 
 /**
@@ -92,9 +106,7 @@ export function normalizeDateString(raw: string): string | null {
   if (!trimmed || MISSING_TOKENS.has(trimmed.toLowerCase())) return null;
 
   // Match DD/MM/YYYY or DD-MM-YYYY with optional HH:mm
-  const dmyMatch = trimmed.match(
-    /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
-  );
+  const dmyMatch = DMY_REGEX.exec(trimmed);
   if (dmyMatch) {
     const first = parseInt(dmyMatch[1], 10);
     const second = parseInt(dmyMatch[2], 10);
@@ -121,9 +133,7 @@ export function normalizeDateString(raw: string): string | null {
   }
 
   // Match YYYY-MM-DD or YYYY/MM/DD with optional time
-  const ymdMatch = trimmed.match(
-    /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?(?:Z|[+-]\d{2}:?\d{2})?)?$/
-  );
+  const ymdMatch = YMD_REGEX.exec(trimmed);
   if (ymdMatch) {
     const year = parseInt(ymdMatch[1], 10);
     const month = parseInt(ymdMatch[2], 10);
@@ -195,7 +205,7 @@ export function parseAndNormalizePollutant(
   }
 
   // Extract number and optional inline unit e.g. "142 ug/m3", "0.08 ppm", "0.18 mg/m3", "-15"
-  const match = cell.match(/^([+-]?\d+(?:\.\d+)?)\s*([a-zA-Zµμ/³3]+)?$/);
+  const match = NUMERIC_CELL_REGEX.exec(cell);
   if (!match) {
     return {
       valueUgM3: null,
@@ -460,16 +470,17 @@ export function parseAndCleanAirQualityData(rawInput: string): QualityReport {
     throw new Error('Input is empty. Please paste a CSV/table or upload a file with air quality readings.');
   }
 
-  if (new Blob([rawInput]).size > MAX_INPUT_BYTES) {
+  if (rawInput.length > MAX_INPUT_BYTES) {
     throw new Error('Input exceeds the 512 KB size limit. Please upload a smaller dataset.');
   }
 
-  const lines = rawInput
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0 && !l.startsWith('#'));
+  const lines: string[] = [];
+  for (const rawLine of rawInput.split(/\r?\n|\r/)) {
+    const trimmedLine = rawLine.trim();
+    if (trimmedLine.length > 0 && !trimmedLine.startsWith('#')) {
+      lines.push(trimmedLine);
+    }
+  }
 
   if (lines.length < 2) {
     throw new Error(
@@ -655,7 +666,7 @@ export function parseAndCleanAirQualityData(rawInput: string): QualityReport {
  * @returns Inferred ward string
  */
 function inferWardFromStation(station: string): string {
-  const match = station.match(/(ward\s*[a-z0-9-]+|sector\s*\d+|zone\s*[a-z0-9-]+)/i);
+  const match = WARD_REGEX.exec(station);
   return match ? match[1] : station;
 }
 
@@ -758,85 +769,112 @@ function buildQualityReport(rows: CleanedRow[]): QualityReport {
   let unitConversionsCount = 0;
   let unitConflictsCount = 0;
   let invalidDatesCount = 0;
+  let reliableRows = 0;
+  let flaggedRows = 0;
+  let totalScoreSum = 0;
 
-  const stationGroups = new Map<string, CleanedRow[]>();
+  interface StationAcc {
+    ward: string;
+    station: string;
+    totalRows: number;
+    reliableRows: number;
+    missingCount: number;
+    impossibleCount: number;
+    spikeCount: number;
+    unitConversions: number;
+    unitConflicts: number;
+    scoreSum: number;
+    aqiSum: number;
+    aqiCount: number;
+    peakAqi: number | null;
+  }
+
+  const stationGroups = new Map<string, StationAcc>();
 
   for (const row of rows) {
-    for (const iss of row.issues) {
-      if (iss.type === 'MISSING_READING') missingReadingsCount++;
-      if (iss.type === 'IMPOSSIBLE_VALUE') impossibleValuesCount++;
-      if (iss.type === 'SPIKE_DETECTED') spikesDetectedCount++;
-      if (iss.type === 'UNIT_CONVERTED') unitConversionsCount++;
-      if (iss.type === 'UNIT_CONFLICT') unitConflictsCount++;
-      if (iss.type === 'INVALID_DATE') invalidDatesCount++;
-    }
+    const rowScore = scoreRowReliability(row);
+    totalScoreSum += rowScore;
+    if (row.isReliable) reliableRows++;
+    if (row.issues.length > 0) flaggedRows++;
 
     const key = `${row.ward}|||${row.rawStation}`;
-    const group = stationGroups.get(key) || [];
-    group.push(row);
-    stationGroups.set(key, group);
+    let acc = stationGroups.get(key);
+    if (!acc) {
+      acc = {
+        ward: row.ward,
+        station: row.rawStation,
+        totalRows: 0,
+        reliableRows: 0,
+        missingCount: 0,
+        impossibleCount: 0,
+        spikeCount: 0,
+        unitConversions: 0,
+        unitConflicts: 0,
+        scoreSum: 0,
+        aqiSum: 0,
+        aqiCount: 0,
+        peakAqi: null,
+      };
+      stationGroups.set(key, acc);
+    }
+
+    acc.totalRows++;
+    acc.scoreSum += rowScore;
+    if (row.isReliable) {
+      acc.reliableRows++;
+      if (row.aqi !== null) {
+        acc.aqiSum += row.aqi;
+        acc.aqiCount++;
+        if (acc.peakAqi === null || row.aqi > acc.peakAqi) {
+          acc.peakAqi = row.aqi;
+        }
+      }
+    }
+
+    for (const iss of row.issues) {
+      if (iss.type === 'MISSING_READING') {
+        missingReadingsCount++;
+        acc.missingCount++;
+      } else if (iss.type === 'IMPOSSIBLE_VALUE') {
+        impossibleValuesCount++;
+        acc.impossibleCount++;
+      } else if (iss.type === 'SPIKE_DETECTED') {
+        spikesDetectedCount++;
+        acc.spikeCount++;
+      } else if (iss.type === 'UNIT_CONVERTED') {
+        unitConversionsCount++;
+        acc.unitConversions++;
+      } else if (iss.type === 'UNIT_CONFLICT') {
+        unitConflictsCount++;
+        acc.unitConflicts++;
+      } else if (iss.type === 'INVALID_DATE') {
+        invalidDatesCount++;
+      }
+    }
   }
 
   const stationSummaries: StationQualitySummary[] = [];
-
-  for (const [key, groupRows] of stationGroups.entries()) {
-    const [ward, station] = key.split('|||');
-    const reliableInGroup = groupRows.filter((r) => r.isReliable);
-    const aqiValues = reliableInGroup
-      .map((r) => r.aqi)
-      .filter((a): a is number => a !== null);
-
-    const avgAqi =
-      aqiValues.length > 0
-        ? Math.round(aqiValues.reduce((acc, v) => acc + v, 0) / aqiValues.length)
-        : null;
-    const peakAqi = aqiValues.length > 0 ? Math.max(...aqiValues) : null;
-
-    const avgRowScore =
-      groupRows.length > 0
-        ? Math.round(
-            groupRows.reduce((acc, r) => acc + scoreRowReliability(r), 0) / groupRows.length
-          )
-        : 0;
-
+  for (const acc of stationGroups.values()) {
+    const avgAqi = acc.aqiCount > 0 ? Math.round(acc.aqiSum / acc.aqiCount) : null;
     stationSummaries.push({
-      ward,
-      station,
-      totalRows: groupRows.length,
-      reliableRows: reliableInGroup.length,
-      missingCount: groupRows.reduce(
-        (acc, r) => acc + r.issues.filter((i) => i.type === 'MISSING_READING').length,
-        0
-      ),
-      impossibleCount: groupRows.reduce(
-        (acc, r) => acc + r.issues.filter((i) => i.type === 'IMPOSSIBLE_VALUE').length,
-        0
-      ),
-      spikeCount: groupRows.reduce(
-        (acc, r) => acc + r.issues.filter((i) => i.type === 'SPIKE_DETECTED').length,
-        0
-      ),
-      unitConversions: groupRows.reduce(
-        (acc, r) => acc + r.issues.filter((i) => i.type === 'UNIT_CONVERTED').length,
-        0
-      ),
-      unitConflicts: groupRows.reduce(
-        (acc, r) => acc + r.issues.filter((i) => i.type === 'UNIT_CONFLICT').length,
-        0
-      ),
-      reliabilityScore: avgRowScore,
+      ward: acc.ward,
+      station: acc.station,
+      totalRows: acc.totalRows,
+      reliableRows: acc.reliableRows,
+      missingCount: acc.missingCount,
+      impossibleCount: acc.impossibleCount,
+      spikeCount: acc.spikeCount,
+      unitConversions: acc.unitConversions,
+      unitConflicts: acc.unitConflicts,
+      reliabilityScore: acc.totalRows > 0 ? Math.round(acc.scoreSum / acc.totalRows) : 0,
       averageAqi: avgAqi,
-      peakAqi,
+      peakAqi: acc.peakAqi,
       dominantCategory: getCpcbAqiCategory(avgAqi),
     });
   }
 
-  const reliableRows = rows.filter((r) => r.isReliable).length;
-  const flaggedRows = rows.filter((r) => r.issues.length > 0).length;
   const overallReliabilityScore =
-    rows.length > 0
-      ? Math.round(rows.reduce((acc, r) => acc + scoreRowReliability(r), 0) / rows.length)
-      : 0;
+    rows.length > 0 ? Math.round(totalScoreSum / rows.length) : 0;
 
   // Require at least 2 reliable rows and >= 35% reliability score to make strong trend claims
   const hasEnoughReliableData = reliableRows >= 2 && overallReliabilityScore >= 35;

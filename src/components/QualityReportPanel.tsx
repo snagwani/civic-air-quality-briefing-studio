@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { ShieldCheck, ShieldAlert, AlertTriangle, Gauge } from 'lucide-react';
 import type { QualityReport } from '../types/airQuality';
 import { getAqiBadgeStyle } from '../lib/cpcbAqi';
@@ -29,9 +29,13 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
   report,
   highlightedRowId,
 }) => {
-  const cityPeakAqi = report.stationSummaries.reduce<number>(
-    (max, s) => (s.peakAqi !== null && s.peakAqi > max ? s.peakAqi : max),
-    0
+  const cityPeakAqi = useMemo(
+    () =>
+      report.stationSummaries.reduce<number>(
+        (max, s) => (s.peakAqi !== null && s.peakAqi > max ? s.peakAqi : max),
+        0
+      ),
+    [report.stationSummaries]
   );
   const markerLeftPct = Math.min(98, Math.max(2, Math.round((cityPeakAqi / 500) * 100)));
 
