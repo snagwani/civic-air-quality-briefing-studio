@@ -314,7 +314,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let lastError = 'Unknown validation error';
 
-  // Try up to 2 times (initial call + 1 automatic retry on invalid JSON/schema)
+  // Try up to 2 times with automatic model fallback (gemini-3.5-flash -> gemini-3.6-flash -> gemini-3.8-flash)
+  const CANDIDATE_MODELS = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.8-flash'];
+
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const retrySuffix =
@@ -322,8 +324,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `\n\nIMPORTANT RETRY INSTRUCTION: Your previous response failed schema validation (${lastError}). Return strictly valid JSON matching the required schema with no extra text.`
           : '';
 
+      const modelName = CANDIDATE_MODELS[(attempt - 1) % CANDIDATE_MODELS.length];
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: modelName,
         contents: prompt + retrySuffix,
         config: {
           responseMimeType: 'application/json',
