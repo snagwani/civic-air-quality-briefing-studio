@@ -208,10 +208,16 @@ export function parseAndNormalizePollutant(
   }
 
   const effectiveUnit = inlineUnitRaw || columnUnitRaw || 'ug/m3';
+  const normInline = inlineUnitRaw ? normalizeUnitToken(inlineUnitRaw) : null;
+  const normColumn = columnUnitRaw ? normalizeUnitToken(columnUnitRaw) : null;
+
+  // A true unit conflict occurs only when the unit is unknown or physically incompatible with the pollutant
+  // (e.g., particulate matter PM2.5/PM10 reported in gas volume ratio ppm/ppb).
+  // Valid convertible units (like inline mg/m3 or gas ppm when the table default column says ug/m3) are unit conversions, not conflicts.
   const hasConflict =
-    Boolean(inlineUnitRaw) &&
-    Boolean(columnUnitRaw) &&
-    normalizeUnitToken(inlineUnitRaw) !== normalizeUnitToken(columnUnitRaw);
+    normInline === 'unknown' ||
+    ((pollutant === 'PM2.5' || pollutant === 'PM10') &&
+      (normInline === 'ppm' || normInline === 'ppb' || normColumn === 'ppm' || normColumn === 'ppb'));
 
   const normUnit = normalizeUnitToken(effectiveUnit);
 
