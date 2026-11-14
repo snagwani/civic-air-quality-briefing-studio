@@ -163,9 +163,45 @@ CLEANED DATASET (Normalized to µg/m³ with CPCB AQI & Data Quality Flags):
 Overall Reliability Score: ${payload.overallReliabilityScore}/100
 Has Enough Reliable Data: ${payload.hasEnoughReliableData}
 Rows:
-${JSON.stringify(payload.rows, null, 2)}
+${JSON.stringify(payload.rows)}
 
-Return ONLY valid JSON matching the required schema.`;
+Return ONLY valid JSON matching this exact structure (no markdown fences):
+{
+  "overallAssessment": "Plain-language summary of ward air quality and data trustworthiness",
+  "insufficientDataNotice": null,
+  "trends": [
+    {
+      "id": "T1",
+      "title": "Short trend title",
+      "summary": "Plain language explanation referencing exact readings and timestamps",
+      "citedRowIds": ["R01", "R02"],
+      "confidence": "High",
+      "dataCaveat": "Optional note about flagged spikes, unit conversions, or missing readings"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "H1",
+      "location": "Ward / Station name",
+      "severity": "Critical",
+      "likelyCause": "e.g., Construction dust (high PM10) or vehicular/biomass smoke (high PM2.5/NO2)",
+      "explanation": "Why this is flagged and what the readings show",
+      "citedRowIds": ["R01"],
+      "confidence": "High"
+    }
+  ],
+  "actions": [
+    {
+      "id": "A1",
+      "audience": "Ward Officer",
+      "priority": "Immediate (0-6 hrs)",
+      "action": "Specific actionable intervention",
+      "rationale": "Why this action fits these specific readings",
+      "citedRowIds": ["R01"],
+      "confidence": "High"
+    }
+  ]
+}`;
 }
 
 /**
@@ -199,5 +235,34 @@ Cite only valid rowIds from [${validRowIds}]. Provide dedicated care guidance fo
 ${comparisonContext}
 CURRENT VERIFIED ANALYSIS: ${JSON.stringify(payload.analysisSummary)}
 CLEANED ROWS: ${JSON.stringify(payload.rows)}
-Return ONLY valid JSON matching the required schema.`;
+
+Return ONLY valid JSON matching this exact structure (no markdown fences):
+{
+  "language": "${payload.language}",
+  "readingLevel": "${payload.readingLevel}",
+  "internalBriefingNote": {
+    "subject": "Official Ward Briefing Subject Line",
+    "executiveSummary": "Summary of situation, hotspot status, and comparison with previous brief if available",
+    "operationalDirectives": [
+      "Directive 1 for ward enforcement / sanitation / traffic",
+      "Directive 2 for housing societies and schools"
+    ],
+    "dataReliabilityNote": "Honest assessment of sensor reliability, unit conversions, and any data gaps",
+    "citedRowIds": ["R01", "R02"]
+  },
+  "citizenAdvisory": {
+    "headline": "Public Advisory Headline",
+    "publicMessage": "Clear explanation of current air quality and when to avoid outdoor exposure",
+    "dosAndDonts": [
+      "Do: ...",
+      "Don't: ..."
+    ],
+    "vulnerableGroups": {
+      "children": "Specific care for children and school activities",
+      "olderAdults": "Specific care for senior citizens",
+      "sensitiveIndividuals": "Specific care for asthma, COPD, heart patients, and outdoor workers"
+    },
+    "citedRowIds": ["R01", "R02"]
+  }
+}`;
 }

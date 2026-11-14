@@ -4,7 +4,7 @@ const ClientConfigSchema = z.object({
   apiEndpoint: z.string().default('/api/gemini'),
   recordsEndpoint: z.string().default('/api/records'),
   sessionToken: z.string().default('civic-trust-verified-session-v1'),
-  requestTimeoutMs: z.number().default(25_000),
+  requestTimeoutMs: z.number().default(45_000),
   maxInputBytes: z.number().default(512 * 1024),
   maxRows: z.number().default(500),
   lruCacheMaxEntries: z.number().default(30),
