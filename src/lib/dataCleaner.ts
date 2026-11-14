@@ -31,6 +31,12 @@ const MOLAR_VOLUME = 24.45;
 const MW_NO2 = 46.0055;
 const MW_SO2 = 64.066;
 
+/**
+ * Detects the dominant field delimiter (comma, tab, semicolon, or pipe) from a header line.
+ *
+ * @param headerLine - First non-empty line of the raw table
+ * @returns Detected delimiter character
+ */
 function detectDelimiter(headerLine: string): string {
   const counts: Array<{ char: string; count: number }> = [
     { char: ',', count: (headerLine.match(/,/g) || []).length },
@@ -42,6 +48,13 @@ function detectDelimiter(headerLine: string): string {
   return counts[0].count > 0 ? counts[0].char : ',';
 }
 
+/**
+ * Splits a single line by the given delimiter while respecting RFC-4180 double-quoted fields.
+ *
+ * @param line - Raw table row string
+ * @param delimiter - Active column delimiter character
+ * @returns Array of trimmed cell strings
+ */
 function splitDelimitedLine(line: string, delimiter: string): string[] {
   const result: string[] = [];
   let current = '';
@@ -309,6 +322,12 @@ export function parseAndNormalizePollutant(
   };
 }
 
+/**
+ * Normalizes a raw unit token string into a canonical unit identifier.
+ *
+ * @param u - Raw unit string (e.g., "ug/m3", "µg/m³", "mg/m3", "ppm", "ppb")
+ * @returns Canonical unit identifier
+ */
 function normalizeUnitToken(u: string): 'ug/m3' | 'mg/m3' | 'ppm' | 'ppb' | 'unknown' {
   const clean = u.replace(/\s+/g, '').toLowerCase();
   if (
@@ -346,6 +365,12 @@ interface ColumnMap {
   so2HeaderUnit: string;
 }
 
+/**
+ * Extracts a default pollutant measurement unit embedded inside a column header name.
+ *
+ * @param header - Raw column header string
+ * @returns Normalized unit token or empty string
+ */
 function extractHeaderUnit(header: string): string {
   const lower = header.toLowerCase();
   if (lower.includes('ppm')) return 'ppm';
@@ -355,6 +380,12 @@ function extractHeaderUnit(header: string): string {
   return '';
 }
 
+/**
+ * Maps heterogeneous CSV/TSV column headers to standard ward, station, timestamp, and pollutant indices.
+ *
+ * @param headers - Array of header column names
+ * @returns ColumnMap with column indices and header unit hints
+ */
 function mapColumns(headers: string[]): ColumnMap {
   const map: ColumnMap = {
     wardIdx: -1,
@@ -617,11 +648,22 @@ export function parseAndCleanAirQualityData(rawInput: string): QualityReport {
   return buildQualityReport(rows);
 }
 
+/**
+ * Infers a ward/sector/zone label from a station name when the explicit Ward column is empty.
+ *
+ * @param station - Raw station or location string
+ * @returns Inferred ward string
+ */
 function inferWardFromStation(station: string): string {
   const match = station.match(/(ward\s*[a-z0-9-]+|sector\s*\d+|zone\s*[a-z0-9-]+)/i);
   return match ? match[1] : station;
 }
 
+/**
+ * Detects sudden anomalous pollutant spikes per station by comparing each reading against the station median.
+ *
+ * @param rows - Array of CleanedRow objects mutated in-place with SPIKE_DETECTED warnings
+ */
 function detectStationSpikes(rows: CleanedRow[]): void {
   const byStation = new Map<string, CleanedRow[]>();
   for (const r of rows) {
@@ -684,6 +726,12 @@ function detectStationSpikes(rows: CleanedRow[]): void {
   }
 }
 
+/**
+ * Computes a deterministic 0–100 reliability score for a single normalized row based on data quality flags.
+ *
+ * @param row - CleanedRow with issue annotations
+ * @returns Numeric reliability score between 0 and 100
+ */
 function scoreRowReliability(row: CleanedRow): number {
   if (!row.isReliable) return 0;
   let score = 100;
@@ -697,6 +745,12 @@ function scoreRowReliability(row: CleanedRow): number {
   return Math.max(20, score);
 }
 
+/**
+ * Aggregates row-level measurements and audit flags into a station-grouped QualityReport.
+ *
+ * @param rows - Array of normalized and spike-checked CleanedRow entries
+ * @returns Complete QualityReport summary
+ */
 function buildQualityReport(rows: CleanedRow[]): QualityReport {
   let missingReadingsCount = 0;
   let impossibleValuesCount = 0;
