@@ -127,6 +127,48 @@ function keepValidCitations(ids: string[], validRowSet: Set<string>, requireOne:
 }
 
 /**
+ * Detects transient upstream Gemini capacity errors (HTTP 503 / 429) that are safe to retry.
+ * @param err - Error thrown by the Gemini SDK, or its message string
+ * @returns True when the error is a temporary overload or quota spike
+ */
+function isTransientUpstreamError(err: unknown): boolean {
+  const text = err instanceof Error ? err.message : String(err);
+  return /"code":\s*(503|429)|UNAVAILABLE|RESOURCE_EXHAUSTED/i.test(text);
+}
+
+/**
+ * Calls Gemini once, retrying briefly with backoff on transient 503/429 capacity spikes.
+ * @param ai - Initialized GoogleGenAI client
+ * @param model - Gemini model name
+ * @param contents - Prompt text
+ * @returns Raw response text from Gemini
+ */
+async function generateWithTransientRetry(
+  ai: GoogleGenAI,
+  model: string,
+  contents: string
+): Promise<string | undefined> {
+  const maxTries = 3;
+  for (let i = 1; ; i++) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      });
+      return response.text;
+    } catch (err: unknown) {
+      if (i >= maxTries || !isTransientUpstreamError(err)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1200 * i));
+    }
+  }
+}
+
+/**
  * Serverless API handler for authenticated, rate-limited, Zod-validated Gemini analysis and brief generation.
  * @param req - Incoming Vercel serverless request
  * @param res - Outgoing Vercel serverless response
@@ -169,17 +211,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `\n\nIMPORTANT RETRY INSTRUCTION: Your previous response failed schema validation (${lastError}). Return strictly valid JSON matching the required schema.`
           : '';
       const modelName = config.candidateModels[(attempt - 1) % config.candidateModels.length];
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: prompt + retrySuffix,
-        config: {
-          responseMimeType: 'application/json',
-          temperature: 0.2,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      });
-      if (!response.text) throw new Error('Gemini returned an empty response.');
-      const jsonObj = normalizeRawGeminiJson(extractCleanJson(response.text), {
+      const responseText = await generateWithTransientRetry(ai, modelName, prompt + retrySuffix);
+      if (!responseText) throw new Error('Gemini returned an empty response.');
+      const jsonObj = normalizeRawGeminiJson(extractCleanJson(responseText), {
         mode: payload.mode,
         language: payload.mode === 'brief' ? payload.language : undefined,
         readingLevel: payload.mode === 'brief' ? payload.readingLevel : undefined,
@@ -217,6 +251,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (err: unknown) {
       lastError = err instanceof Error ? err.message : String(err);
     }
+  }
+  if (isTransientUpstreamError(lastError)) {
+    return res.status(503).json({
+      error: 'Gemini is temporarily overloaded (high demand). Please click the button again in a few seconds.',
+    });
   }
   return res.status(502).json({
     error: `Gemini output failed validation after retry: ${lastError}`,
