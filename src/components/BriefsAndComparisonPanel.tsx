@@ -56,8 +56,8 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
     onSelectRowId,
   }) => {
     const renderCitations = (ids: string[]) => (
-      <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2 border-t border-slate-200/70">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-zinc-800">
+        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">
           Traceable Data Rows:
         </span>
         {ids.map((id) => (
@@ -69,7 +69,7 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
               const el = document.getElementById(`ledger-row-${id}`);
               el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }}
-            className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-teal-50 text-teal-900 border border-teal-300 hover:bg-teal-200 cursor-pointer"
+            className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-rose-950 text-rose-200 border border-rose-600/80 hover:bg-rose-700 hover:text-white cursor-pointer transition-colors"
           >
             [{id}]
           </button>
@@ -81,23 +81,22 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
       <section
         aria-labelledby="briefs-panel-heading"
         aria-live="polite"
-        className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-6"
+        className="bg-[#101018]/95 rounded-2xl border border-zinc-800/90 border-t-2 border-t-rose-600 shadow-[0_12px_40px_rgba(0,0,0,0.65)] p-5 sm:p-6 space-y-6"
       >
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-zinc-800/80">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-950 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              Step 3 · Multilingual Briefs &amp; Longitudinal Change Tracking
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-widest text-rose-300 bg-rose-950/80 px-3 py-1 rounded-full border border-rose-700/70">
+              Step 03 · Multilingual Civic Dispatch &amp; Longitudinal Diff
             </span>
             <h2
               id="briefs-panel-heading"
-              className="text-lg sm:text-xl font-bold text-slate-900 mt-1.5"
+              className="text-lg sm:text-xl font-black text-white mt-2"
             >
               Internal Briefing Note, Citizen Advisory &amp; Brief-to-Brief Diff
             </h2>
-            <p className="text-sm text-slate-600">
-              Generates official communications in English, Hindi, or Marathi at Simple or Detailed
-              reading levels, with dedicated protection for children, older adults, and sensitive
-              groups.
+            <p className="text-sm text-zinc-300">
+              Generates official dispatches in English, Hindi (हिन्दी), or Marathi (मराठी) at Simple
+              or Detailed reading levels with dedicated care for vulnerable groups.
             </p>
           </div>
 
@@ -105,7 +104,7 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
             <div>
               <label
                 htmlFor="brief-language-select"
-                className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1"
+                className="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 mb-1"
               >
                 Language
               </label>
@@ -114,7 +113,7 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
                 value={language}
                 onChange={(e) => onLanguageChange(e.target.value as SupportedLanguage)}
                 disabled={isLoading}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 focus:border-teal-700"
+                className="rounded-lg border border-zinc-700 bg-[#090910] px-3 py-2 text-sm font-semibold text-white focus:border-rose-500"
               >
                 <option value="English">English (Civic Standard)</option>
                 <option value="Hindi">हिन्दी (Hindi)</option>
@@ -125,7 +124,7 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
             <div>
               <label
                 htmlFor="brief-reading-level-select"
-                className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1"
+                className="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 mb-1"
               >
                 Reading Level
               </label>
@@ -134,7 +133,7 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
                 value={readingLevel}
                 onChange={(e) => onReadingLevelChange(e.target.value as ReadingLevel)}
                 disabled={isLoading}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 focus:border-teal-700"
+                className="rounded-lg border border-zinc-700 bg-[#090910] px-3 py-2 text-sm font-semibold text-white focus:border-rose-500"
               >
                 <option value="Simple">Simple (Everyday Public Clarity)</option>
                 <option value="Detailed">Detailed (Technical &amp; CPCB SOP)</option>
@@ -145,7 +144,7 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
               type="button"
               onClick={onGenerateBrief}
               disabled={!canGenerate || isLoading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm shadow-xs disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-bold text-sm shadow-[0_0_24px_rgba(225,29,72,0.45)] border border-rose-400/40 disabled:opacity-50 cursor-pointer transition-all"
             >
               {isLoading ? (
                 <>
@@ -163,9 +162,9 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
         </div>
 
         {!canGenerate && (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-600">
-            Complete <strong>Step 2 (Live Gemini Analysis)</strong> first so the briefing note and
-            citizen advisory can synthesize verified hotspots and role-based actions.
+          <div className="rounded-xl border border-dashed border-zinc-700 bg-[#090910] p-5 text-center text-sm text-zinc-300">
+            Complete <strong className="text-rose-300">Step 2 (Live Gemini Analysis)</strong> first
+            so the municipal briefing note and citizen advisory synthesize verified hotspots.
           </div>
         )}
 
@@ -173,60 +172,60 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
           <div
             role="alert"
             aria-live="assertive"
-            className="rounded-lg bg-red-50 border border-red-300 p-4 flex items-start gap-3 text-red-950"
+            className="rounded-xl bg-[#2a0610] border border-rose-500 p-4 flex items-start gap-3 text-rose-100"
           >
-            <AlertCircle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" aria-hidden="true" />
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" aria-hidden="true" />
             <div className="text-sm">
-              <p className="font-bold">Brief Generation Failed</p>
-              <p className="mt-0.5 text-xs">{error}</p>
+              <p className="font-bold text-white">Brief Generation Failed</p>
+              <p className="mt-0.5 text-xs text-rose-200">{error}</p>
             </div>
           </div>
         )}
 
         {brief && (
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 bg-slate-50 px-3.5 py-2 rounded-lg border border-slate-200">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-300 bg-[#090910] px-4 py-2.5 rounded-xl border border-zinc-800 font-mono">
               <span>
-                Active Brief Language: <strong className="text-slate-900">{brief.language}</strong>{' '}
-                · Reading Level: <strong className="text-slate-900">{brief.readingLevel}</strong>
+                ACTIVE DISPATCH: <strong className="text-white">{brief.language}</strong> · LEVEL:{' '}
+                <strong className="text-rose-300">{brief.readingLevel}</strong>
               </span>
-              <span className="font-semibold text-teal-800">
+              <span className="font-semibold text-emerald-300">
                 {fromCache
-                  ? 'Served from Bounded LRU Session Cache'
-                  : 'Generated Live via Gemini API & Synced to /api/records + localStorage'}
+                  ? 'SERVED FROM BOUNDED LRU CACHE'
+                  : 'LIVE GEMINI API · SYNCED TO /api/records + localStorage'}
               </span>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <article className="rounded-xl border border-slate-300 bg-slate-50/70 p-5 flex flex-col justify-between">
+              <article className="rounded-xl border border-zinc-800 bg-[#090910] p-5 flex flex-col justify-between">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-800">
-                    <FileText className="w-4 h-4 text-slate-800" aria-hidden="true" />
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-300">
+                    <FileText className="w-4 h-4 text-rose-500" aria-hidden="true" />
                     Internal Municipal &amp; RWA Briefing Note
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">
+                    <h3 className="text-base font-bold text-white">
                       {brief.internalBriefingNote.subject}
                     </h3>
-                    <p className="text-sm text-slate-800 mt-2 leading-relaxed">
+                    <p className="text-sm text-zinc-200 mt-2 leading-relaxed">
                       {brief.internalBriefingNote.executiveSummary}
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700 mb-2">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-rose-300 mb-2">
                       Operational Directives
                     </h4>
-                    <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-slate-800">
+                    <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-zinc-200">
                       {brief.internalBriefingNote.operationalDirectives.map((dir, i) => (
                         <li key={i}>{dir}</li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="rounded-lg bg-amber-50/90 border border-amber-300 p-3 text-xs text-amber-950">
-                    <strong className="font-bold block mb-0.5">
+                  <div className="rounded-lg bg-[#271705] border border-amber-600/70 p-3 text-xs text-amber-200">
+                    <strong className="font-bold text-amber-300 block mb-0.5 font-mono uppercase">
                       Data Audit &amp; Sensor Reliability Note:
                     </strong>
                     {brief.internalBriefingNote.dataReliabilityNote}
@@ -236,27 +235,27 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
                 {renderCitations(brief.internalBriefingNote.citedRowIds)}
               </article>
 
-              <article className="rounded-xl border border-teal-300 bg-teal-50/30 p-5 flex flex-col justify-between">
+              <article className="rounded-xl border border-rose-900/80 bg-gradient-to-b from-[#170910] to-[#090910] p-5 flex flex-col justify-between">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-900">
-                    <Megaphone className="w-4 h-4 text-teal-800" aria-hidden="true" />
-                    Public Citizen &amp; Housing Society Advisory
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-300">
+                    <Megaphone className="w-4 h-4 text-rose-400" aria-hidden="true" />
+                    Public Citizen &amp; Housing Society Smog Advisory
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">
+                    <h3 className="text-base font-bold text-white">
                       {brief.citizenAdvisory.headline}
                     </h3>
-                    <p className="text-sm text-slate-800 mt-2 leading-relaxed">
+                    <p className="text-sm text-zinc-200 mt-2 leading-relaxed">
                       {brief.citizenAdvisory.publicMessage}
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700 mb-2">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-rose-300 mb-2">
                       Citizen Do’s &amp; Don’ts
                     </h4>
-                    <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-slate-800">
+                    <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-zinc-200">
                       {brief.citizenAdvisory.dosAndDonts.map((item, i) => (
                         <li key={i}>{item}</li>
                       ))}
@@ -264,48 +263,48 @@ export const BriefsAndComparisonPanel: React.FC<BriefsAndComparisonPanelProps> =
                   </div>
 
                   <div className="space-y-2.5 pt-1">
-                    <h4 className="text-xs font-bold uppercase tracking-wide text-teal-950">
-                      Extra Care for Vulnerable Groups
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-rose-300">
+                      Extra Care for Vulnerable Populations
                     </h4>
 
-                    <div className="rounded-lg bg-white border border-slate-200 p-3 flex items-start gap-2.5">
-                      <Baby className="w-4 h-4 text-sky-700 shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="rounded-lg bg-[#090910] border border-zinc-800 p-3 flex items-start gap-2.5">
+                      <Baby className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <div className="text-xs">
-                        <strong className="font-bold text-slate-900 block">
+                        <strong className="font-bold text-white block">
                           Children &amp; School Students
                         </strong>
-                        <span className="text-slate-700">
+                        <span className="text-zinc-300">
                           {brief.citizenAdvisory.vulnerableGroups.children}
                         </span>
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-white border border-slate-200 p-3 flex items-start gap-2.5">
+                    <div className="rounded-lg bg-[#090910] border border-zinc-800 p-3 flex items-start gap-2.5">
                       <UserCheck
-                        className="w-4 h-4 text-amber-700 shrink-0 mt-0.5"
+                        className="w-4 h-4 text-amber-400 shrink-0 mt-0.5"
                         aria-hidden="true"
                       />
                       <div className="text-xs">
-                        <strong className="font-bold text-slate-900 block">
+                        <strong className="font-bold text-white block">
                           Older Adults &amp; Senior Citizens
                         </strong>
-                        <span className="text-slate-700">
+                        <span className="text-zinc-300">
                           {brief.citizenAdvisory.vulnerableGroups.olderAdults}
                         </span>
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-white border border-slate-200 p-3 flex items-start gap-2.5">
+                    <div className="rounded-lg bg-[#090910] border border-rose-900/70 p-3 flex items-start gap-2.5">
                       <HeartPulse
-                        className="w-4 h-4 text-rose-700 shrink-0 mt-0.5"
+                        className="w-4 h-4 text-rose-400 shrink-0 mt-0.5"
                         aria-hidden="true"
                       />
                       <div className="text-xs">
-                        <strong className="font-bold text-slate-900 block">
+                        <strong className="font-bold text-white block">
                           People Sensitive to Poor Air (Asthma, COPD, Heart Conditions, Outdoor
                           Workers)
                         </strong>
-                        <span className="text-slate-700">
+                        <span className="text-zinc-300">
                           {brief.citizenAdvisory.vulnerableGroups.sensitiveIndividuals}
                         </span>
                       </div>

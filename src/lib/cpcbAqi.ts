@@ -131,19 +131,19 @@ export function getCpcbAqiCategory(aqi: number | null): AqiCategory {
 export function getAqiBadgeStyle(category: AqiCategory): string {
   switch (category) {
     case 'Good':
-      return 'bg-emerald-100 text-emerald-950 border-emerald-300';
+      return 'bg-emerald-950/90 text-emerald-200 border-emerald-500/60';
     case 'Satisfactory':
-      return 'bg-lime-100 text-lime-950 border-lime-300';
+      return 'bg-lime-950/90 text-lime-200 border-lime-500/60';
     case 'Moderate':
-      return 'bg-amber-100 text-amber-950 border-amber-300';
+      return 'bg-amber-950/90 text-amber-200 border-amber-500/60';
     case 'Poor':
-      return 'bg-orange-100 text-orange-950 border-orange-300';
+      return 'bg-orange-950/90 text-orange-200 border-orange-500/60';
     case 'Very Poor':
-      return 'bg-red-100 text-red-950 border-red-300';
+      return 'bg-red-950/95 text-red-100 border-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.3)]';
     case 'Severe':
-      return 'bg-rose-950 text-white border-rose-800';
+      return 'bg-rose-600 text-white border-rose-400 shadow-[0_0_16px_rgba(225,29,72,0.55)]';
     default:
-      return 'bg-slate-200 text-slate-900 border-slate-300';
+      return 'bg-zinc-900 text-zinc-300 border-zinc-700';
   }
 }
 

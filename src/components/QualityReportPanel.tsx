@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ArrowRightLeft,
   Flame,
+  Gauge,
 } from 'lucide-react';
 import type { QualityReport } from '../types/airQuality';
 import { getAqiBadgeStyle } from '../lib/cpcbAqi';
@@ -15,47 +16,62 @@ interface QualityReportPanelProps {
   highlightedRowId: string | null;
 }
 
+const CPCB_BANDS = [
+  { label: 'GOOD', range: '0–50', color: 'bg-emerald-500/80 text-emerald-950' },
+  { label: 'SATISFACTORY', range: '51–100', color: 'bg-lime-500/80 text-lime-950' },
+  { label: 'MODERATE', range: '101–200', color: 'bg-amber-400/90 text-amber-950' },
+  { label: 'POOR', range: '201–300', color: 'bg-orange-500/90 text-white' },
+  { label: 'VERY POOR', range: '301–400', color: 'bg-red-600 text-white' },
+  { label: 'SEVERE', range: '401–500', color: 'bg-rose-600 text-white font-black' },
+];
+
 /**
  * Renders the deterministic CPCB Data Quality & Normalization Report,
- * Station Reliability Scorecard, and Normalized Row Ledger with row-ID highlighting.
+ * Live Atmospheric Hazard Spectrum, Station Reliability Scorecard, and Normalized Row Ledger.
  */
 export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
   report,
   highlightedRowId,
 }) => {
+  const cityPeakAqi = report.stationSummaries.reduce<number>(
+    (max, s) => (s.peakAqi !== null && s.peakAqi > max ? s.peakAqi : max),
+    0
+  );
+  const markerLeftPct = Math.min(98, Math.max(2, Math.round((cityPeakAqi / 500) * 100)));
+
   return (
     <section
       aria-labelledby="quality-report-heading"
       aria-live="polite"
-      className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-6"
+      className="bg-[#101018]/95 rounded-2xl border border-zinc-800/90 border-t-2 border-t-rose-500 shadow-[0_12px_40px_rgba(0,0,0,0.65)] p-5 sm:p-6 space-y-6"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-800/80">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-800 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-300">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-widest text-rose-300 bg-rose-950/80 px-3 py-1 rounded-full border border-rose-700/70">
             Deterministic Audit · India CPCB National AQI
           </span>
-          <h2 id="quality-report-heading" className="text-lg sm:text-xl font-bold text-slate-900 mt-1.5">
+          <h2 id="quality-report-heading" className="text-lg sm:text-xl font-black text-white mt-2">
             Data Quality &amp; Normalization Report
           </h2>
-          <p className="text-sm text-slate-600">
-            All valid measurements converted to standard <strong className="font-semibold">µg/m³</strong>.
-            Impossible readings and unit conflicts are flagged and isolated before AI interpretation.
+          <p className="text-sm text-zinc-300">
+            All valid measurements normalized to <strong className="text-rose-300 font-mono">µg/m³</strong>.
+            Impossible readings and unit conflicts are isolated before AI synthesis.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-3.5 bg-[#090910] border border-rose-800/70 rounded-xl px-4 py-3 shadow-[0_0_20px_rgba(225,29,72,0.18)]">
           {report.hasEnoughReliableData ? (
-            <ShieldCheck className="w-8 h-8 text-teal-700 shrink-0" aria-hidden="true" />
+            <ShieldCheck className="w-8 h-8 text-emerald-400 shrink-0" aria-hidden="true" />
           ) : (
-            <ShieldAlert className="w-8 h-8 text-amber-700 shrink-0" aria-hidden="true" />
+            <ShieldAlert className="w-8 h-8 text-rose-500 shrink-0 animate-pulse" aria-hidden="true" />
           )}
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">
               Dataset Trust Score
             </div>
-            <div className="text-2xl font-extrabold text-slate-900">
+            <div className="text-2xl font-black font-mono text-white">
               {report.overallReliabilityScore}%
-              <span className="ml-2 text-xs font-medium text-slate-600">
+              <span className="ml-2 text-xs font-medium text-rose-300">
                 ({report.reliableRows}/{report.totalRows} reliable rows)
               </span>
             </div>
@@ -63,55 +79,81 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
         </div>
       </div>
 
+      {/* Live CPCB Atmospheric Hazard Spectrum Meter */}
+      <div className="rounded-xl bg-[#090910] border border-zinc-800 p-4 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-rose-300">
+            <Gauge className="w-4 h-4 text-rose-500" aria-hidden="true" />
+            Live CPCB Atmospheric Hazard Spectrum (0–500 Scale)
+          </span>
+          <span className="text-zinc-200">
+            Active Peak Telemetry: <strong className="text-rose-400 text-sm">{cityPeakAqi || 'N/A'} AQI</strong>
+          </span>
+        </div>
+        <div className="relative pt-2 pb-1">
+          <div className="grid grid-cols-6 gap-1 rounded-lg overflow-hidden text-[10px] font-mono text-center">
+            {CPCB_BANDS.map((b) => (
+              <div key={b.label} className={`py-1.5 px-1 ${b.color}`}>
+                <div className="font-bold truncate">{b.label}</div>
+                <div className="opacity-85">{b.range}</div>
+              </div>
+            ))}
+          </div>
+          {cityPeakAqi > 0 && (
+            <div
+              className="absolute -top-0.5 -translate-x-1/2 flex flex-col items-center pointer-events-none"
+              style={{ left: `${markerLeftPct}%` }}
+            >
+              <span className="px-1.5 py-0.5 rounded bg-white text-[#090910] font-mono font-black text-[10px] shadow-md">
+                ▲ {cityPeakAqi}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {!report.hasEnoughReliableData && (
         <div
           role="status"
-          className="rounded-lg bg-amber-50 border border-amber-300 p-4 flex items-start gap-3 text-amber-950"
+          className="rounded-xl bg-[#271705] border border-amber-500/80 p-4 flex items-start gap-3 text-amber-100"
         >
-          <AlertTriangle className="w-5 h-5 text-amber-800 shrink-0 mt-0.5" aria-hidden="true" />
+          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="text-sm">
-            <p className="font-bold">Low Data Reliability Warning (“Not Enough Reliable Data”)</p>
-            <p className="mt-0.5 text-xs leading-relaxed">
-              Fewer than 2 reliable rows or overall trust score below 35%. Gemini is instructed by the
-              Trust Layer not to guess trends and will explicitly report{' '}
-              <span className="font-semibold">"Not enough reliable data"</span> where sensor readings
-              are missing or physically impossible.
+            <p className="font-bold text-white">Low Data Reliability Warning (“Not Enough Reliable Data”)</p>
+            <p className="mt-0.5 text-xs text-amber-200 leading-relaxed">
+              Fewer than 2 reliable rows or overall trust score below 35%. Gemini is locked by the Trust
+              Layer not to fabricate trends and will explicitly report{' '}
+              <span className="font-semibold text-white">"Not enough reliable data"</span>.
             </p>
           </div>
         </div>
       )}
 
       {/* Summary Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
-          <div className="text-xs font-medium text-slate-600">Total Rows</div>
-          <div className="text-xl font-bold text-slate-900 mt-0.5">{report.totalRows}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-mono">
+        <div className="rounded-xl border border-zinc-800 bg-[#090910] p-3.5">
+          <div className="text-[11px] uppercase text-zinc-400">Total Rows</div>
+          <div className="text-2xl font-black text-white mt-1">{report.totalRows}</div>
         </div>
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
-          <div className="text-xs font-medium text-emerald-900">Reliable Rows</div>
-          <div className="text-xl font-bold text-emerald-950 mt-0.5">{report.reliableRows}</div>
+        <div className="rounded-xl border border-emerald-800/70 bg-emerald-950/30 p-3.5">
+          <div className="text-[11px] uppercase text-emerald-300">Reliable Rows</div>
+          <div className="text-2xl font-black text-emerald-200 mt-1">{report.reliableRows}</div>
         </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
-          <div className="text-xs font-medium text-amber-900">Missing Readings</div>
-          <div className="text-xl font-bold text-amber-950 mt-0.5">
-            {report.missingReadingsCount}
-          </div>
+        <div className="rounded-xl border border-amber-800/70 bg-amber-950/30 p-3.5">
+          <div className="text-[11px] uppercase text-amber-300">Missing Gaps</div>
+          <div className="text-2xl font-black text-amber-200 mt-1">{report.missingReadingsCount}</div>
         </div>
-        <div className="rounded-lg border border-red-200 bg-red-50/50 p-3">
-          <div className="text-xs font-medium text-red-900">Impossible Values</div>
-          <div className="text-xl font-bold text-red-950 mt-0.5">
-            {report.impossibleValuesCount}
-          </div>
+        <div className="rounded-xl border border-rose-700/80 bg-rose-950/40 p-3.5">
+          <div className="text-[11px] uppercase text-rose-300">Impossible Values</div>
+          <div className="text-2xl font-black text-rose-200 mt-1">{report.impossibleValuesCount}</div>
         </div>
-        <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3">
-          <div className="text-xs font-medium text-purple-900">Sudden Spikes</div>
-          <div className="text-xl font-bold text-purple-950 mt-0.5">
-            {report.spikesDetectedCount}
-          </div>
+        <div className="rounded-xl border border-fuchsia-800/70 bg-fuchsia-950/30 p-3.5">
+          <div className="text-[11px] uppercase text-fuchsia-300">Sudden Spikes</div>
+          <div className="text-2xl font-black text-fuchsia-200 mt-1">{report.spikesDetectedCount}</div>
         </div>
-        <div className="rounded-lg border border-sky-200 bg-sky-50/50 p-3">
-          <div className="text-xs font-medium text-sky-900">Unit Conversions / Conflicts</div>
-          <div className="text-xl font-bold text-sky-950 mt-0.5">
+        <div className="rounded-xl border border-sky-800/70 bg-sky-950/30 p-3.5">
+          <div className="text-[11px] uppercase text-sky-300">Unit Conv / Conflict</div>
+          <div className="text-2xl font-black text-sky-200 mt-1">
             {report.unitConversionsCount} / {report.unitConflictsCount}
           </div>
         </div>
@@ -119,70 +161,48 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
 
       {/* Station / Ward Reliability Breakdown */}
       <div>
-        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-800 mb-2.5">
-          Station &amp; Ward Reliability Scorecard
+        <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-rose-300 mb-2.5">
+          Station &amp; Ward Atmospheric Reliability Scorecard
         </h3>
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-[#090910]">
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
-              <tr className="bg-slate-100 text-slate-800 border-b border-slate-200">
-                <th scope="col" className="py-2.5 px-3 font-semibold">Ward</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">Station / Location</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">Reliable / Total</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">Avg CPCB AQI</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">Peak AQI</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">CPCB Category</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">Flags (Gap / Imp / Spike / Unit)</th>
-                <th scope="col" className="py-2.5 px-3 font-semibold">Reliability Score</th>
+              <tr className="bg-zinc-900/90 text-zinc-200 border-b border-zinc-800 font-mono text-xs uppercase">
+                <th scope="col" className="py-3 px-3 font-bold">Ward</th>
+                <th scope="col" className="py-3 px-3 font-bold">Station / Node</th>
+                <th scope="col" className="py-3 px-3 font-bold">Reliable</th>
+                <th scope="col" className="py-3 px-3 font-bold">Avg AQI</th>
+                <th scope="col" className="py-3 px-3 font-bold">Peak AQI</th>
+                <th scope="col" className="py-3 px-3 font-bold">CPCB Hazard Band</th>
+                <th scope="col" className="py-3 px-3 font-bold">Flags (Gap/Imp/Spk/Unit)</th>
+                <th scope="col" className="py-3 px-3 font-bold">Trust Score</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-zinc-800/80">
               {report.stationSummaries.map((st) => (
-                <tr key={`${st.ward}-${st.station}`} className="hover:bg-slate-50">
-                  <td className="py-2.5 px-3 font-semibold text-slate-900">{st.ward}</td>
-                  <td className="py-2.5 px-3 text-slate-700">{st.station}</td>
-                  <td className="py-2.5 px-3 font-mono">
-                    {st.reliableRows}/{st.totalRows}
-                  </td>
-                  <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                    {st.averageAqi ?? 'N/A'}
-                  </td>
-                  <td className="py-2.5 px-3 font-mono text-slate-800">
-                    {st.peakAqi ?? 'N/A'}
-                  </td>
+                <tr key={`${st.ward}-${st.station}`} className="hover:bg-zinc-900/60">
+                  <td className="py-2.5 px-3 font-bold text-white">{st.ward}</td>
+                  <td className="py-2.5 px-3 text-zinc-300">{st.station}</td>
+                  <td className="py-2.5 px-3 font-mono text-zinc-200">{st.reliableRows}/{st.totalRows}</td>
+                  <td className="py-2.5 px-3 font-mono font-black text-rose-300">{st.averageAqi ?? 'N/A'}</td>
+                  <td className="py-2.5 px-3 font-mono font-bold text-white">{st.peakAqi ?? 'N/A'}</td>
                   <td className="py-2.5 px-3">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold border ${getAqiBadgeStyle(
-                        st.dominantCategory
-                      )}`}
-                    >
+                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-mono font-bold border ${getAqiBadgeStyle(st.dominantCategory)}`}>
                       {st.dominantCategory}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 font-mono text-xs text-slate-700">
-                    {st.missingCount} / {st.impossibleCount} / {st.spikeCount} /{' '}
-                    {st.unitConversions + st.unitConflicts}
+                  <td className="py-2.5 px-3 font-mono text-xs text-zinc-300">
+                    {st.missingCount} / {st.impossibleCount} / {st.spikeCount} / {st.unitConversions + st.unitConflicts}
                   </td>
                   <td className="py-2.5 px-3">
                     <div className="flex items-center gap-2">
-                      <div
-                        className="w-16 h-2 rounded-full bg-slate-200 overflow-hidden"
-                        aria-hidden="true"
-                      >
+                      <div className="w-16 h-2 rounded-full bg-zinc-800 overflow-hidden" aria-hidden="true">
                         <div
-                          className={`h-full ${
-                            st.reliabilityScore >= 75
-                              ? 'bg-teal-700'
-                              : st.reliabilityScore >= 50
-                              ? 'bg-amber-600'
-                              : 'bg-red-600'
-                          }`}
+                          className={`h-full ${st.reliabilityScore >= 75 ? 'bg-emerald-500' : st.reliabilityScore >= 50 ? 'bg-amber-500' : 'bg-rose-600'}`}
                           style={{ width: `${st.reliabilityScore}%` }}
                         />
                       </div>
-                      <span className="font-mono font-semibold text-xs text-slate-900">
-                        {st.reliabilityScore}%
-                      </span>
+                      <span className="font-mono font-bold text-xs text-white">{st.reliabilityScore}%</span>
                     </div>
                   </td>
                 </tr>
@@ -195,91 +215,76 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
       {/* Normalized Row-by-Row Traceability Table */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2.5">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-800">
-            Normalized Row Ledger (Traceable Citation IDs)
+          <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-rose-300">
+            Normalized Row Telemetry Ledger (Traceable [R##] Citation IDs)
           </h3>
-          <span className="text-xs text-slate-600">
-            Click any <code className="font-mono bg-slate-100 px-1 rounded">R##</code> badge in the AI
-            findings below to highlight the underlying sensor row here.
+          <span className="text-xs text-zinc-300">
+            Click any <code className="font-mono text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-700">[R##]</code> badge below to illuminate the row.
           </span>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-slate-200 max-h-96">
+        <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-[#090910] max-h-96">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="sticky top-0 bg-slate-100 text-slate-800 border-b border-slate-200 z-10">
+            <thead className="sticky top-0 bg-zinc-900 text-zinc-200 border-b border-zinc-800 z-10 font-mono uppercase">
               <tr>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">Row ID</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">Ward &amp; Station</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">Normalized Timestamp</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">PM2.5 (µg/m³)</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">PM10 (µg/m³)</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">NO₂ (µg/m³)</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">SO₂ (µg/m³)</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">CPCB AQI</th>
-                <th scope="col" className="py-2.5 px-2.5 font-semibold">Trust Audit &amp; Flags</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">Row ID</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">Ward &amp; Station</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">Timestamp</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">PM2.5 (µg/m³)</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">PM10 (µg/m³)</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">NO₂ (µg/m³)</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">SO₂ (µg/m³)</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">CPCB AQI</th>
+                <th scope="col" className="py-2.5 px-2.5 font-bold">Telemetry Audit &amp; Flags</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-zinc-800/80">
               {report.rows.map((row) => {
                 const isHighlighted = highlightedRowId === row.rowId;
                 return (
                   <tr
                     key={row.rowId}
                     id={`ledger-row-${row.rowId}`}
-                    className={`transition-colors ${
+                    className={`transition-all ${
                       isHighlighted
-                        ? 'bg-teal-100/90 ring-2 ring-inset ring-teal-700'
+                        ? 'bg-rose-950/90 ring-2 ring-inset ring-rose-500 shadow-[0_0_20px_rgba(225,29,72,0.4)]'
                         : !row.isReliable
-                        ? 'bg-red-50/40'
-                        : 'hover:bg-slate-50'
+                        ? 'bg-red-950/25'
+                        : 'hover:bg-zinc-900/60'
                     }`}
                   >
-                    <td className="py-2 px-2.5 font-mono font-bold text-teal-900 whitespace-nowrap">
-                      <span className="inline-block px-2 py-0.5 rounded bg-teal-50 border border-teal-300">
+                    <td className="py-2 px-2.5 font-mono font-bold whitespace-nowrap">
+                      <span className="inline-block px-2 py-0.5 rounded bg-rose-950 text-rose-200 border border-rose-600/70">
                         {row.rowId}
                       </span>
                     </td>
                     <td className="py-2 px-2.5">
-                      <div className="font-semibold text-slate-900">{row.ward}</div>
-                      <div className="text-slate-600">{row.rawStation}</div>
+                      <div className="font-bold text-white">{row.ward}</div>
+                      <div className="text-zinc-400">{row.rawStation}</div>
                     </td>
-                    <td className="py-2 px-2.5 font-mono text-slate-800 whitespace-nowrap">
+                    <td className="py-2 px-2.5 font-mono text-zinc-200 whitespace-nowrap">
                       {row.normalizedTimestamp ?? (
-                        <span className="text-amber-800 font-sans italic">
-                          Invalid ({row.rawTimestamp || 'empty'})
-                        </span>
+                        <span className="text-amber-300 font-sans italic">Invalid ({row.rawTimestamp || 'empty'})</span>
                       )}
                     </td>
-                    <td className="py-2 px-2.5 font-mono">
-                      {row.pm25UgM3 !== null ? row.pm25UgM3 : <span className="text-slate-400">—</span>}
-                    </td>
-                    <td className="py-2 px-2.5 font-mono">
-                      {row.pm10UgM3 !== null ? row.pm10UgM3 : <span className="text-slate-400">—</span>}
-                    </td>
-                    <td className="py-2 px-2.5 font-mono">
-                      {row.no2UgM3 !== null ? row.no2UgM3 : <span className="text-slate-400">—</span>}
-                    </td>
-                    <td className="py-2 px-2.5 font-mono">
-                      {row.so2UgM3 !== null ? row.so2UgM3 : <span className="text-slate-400">—</span>}
-                    </td>
-                    <td className="py-2 px-2.5 whitespace-nowrap">
+                    <td className="py-2 px-2.5 font-mono text-zinc-100">{row.pm25UgM3 ?? <span className="text-zinc-600">—</span>}</td>
+                    <td className="py-2 px-2.5 font-mono text-zinc-100">{row.pm10UgM3 ?? <span className="text-zinc-600">—</span>}</td>
+                    <td className="py-2 px-2.5 font-mono text-zinc-100">{row.no2UgM3 ?? <span className="text-zinc-600">—</span>}</td>
+                    <td className="py-2 px-2.5 font-mono text-zinc-100">{row.so2UgM3 ?? <span className="text-zinc-600">—</span>}</td>
+                    <td className="py-2 px-2.5 whitespace-nowrap font-mono">
                       {row.aqi !== null ? (
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded font-semibold border ${getAqiBadgeStyle(
-                            row.aqiCategory
-                          )}`}
-                        >
+                        <span className={`inline-block px-2 py-0.5 rounded font-bold border ${getAqiBadgeStyle(row.aqiCategory)}`}>
                           {row.aqi} · {row.aqiCategory}
                         </span>
                       ) : (
-                        <span className="inline-block px-2 py-0.5 rounded bg-red-100 text-red-900 border border-red-300 font-medium">
-                          Excluded (Unreliable)
+                        <span className="inline-block px-2 py-0.5 rounded bg-rose-950/90 text-rose-200 border border-rose-600 font-semibold">
+                          Excluded (Corrupt)
                         </span>
                       )}
                     </td>
                     <td className="py-2 px-2.5">
                       {row.issues.length === 0 ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-800 font-medium">
+                        <span className="inline-flex items-center gap-1 text-emerald-300 font-mono font-semibold">
                           <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                           Verified Clean
                         </span>
@@ -288,22 +293,18 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
                           {row.issues.map((iss, idx) => (
                             <li
                               key={`${row.rowId}-iss-${idx}`}
-                              className={`inline-flex items-center gap-1 mr-1.5 px-1.5 py-0.5 rounded text-[11px] font-medium border ${
+                              className={`inline-flex items-center gap-1 mr-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
                                 iss.severity === 'error'
-                                  ? 'bg-red-100 text-red-950 border-red-300'
+                                  ? 'bg-rose-950 text-rose-200 border-rose-600/80'
                                   : iss.type === 'SPIKE_DETECTED'
-                                  ? 'bg-purple-100 text-purple-950 border-purple-300'
+                                  ? 'bg-fuchsia-950 text-fuchsia-200 border-fuchsia-600/80'
                                   : iss.type === 'UNIT_CONVERTED'
-                                  ? 'bg-sky-100 text-sky-950 border-sky-300'
-                                  : 'bg-amber-100 text-amber-950 border-amber-300'
+                                  ? 'bg-sky-950 text-sky-200 border-sky-600/80'
+                                  : 'bg-amber-950 text-amber-200 border-amber-600/80'
                               }`}
                             >
-                              {iss.type === 'UNIT_CONVERTED' && (
-                                <ArrowRightLeft className="w-3 h-3 shrink-0" aria-hidden="true" />
-                              )}
-                              {iss.type === 'SPIKE_DETECTED' && (
-                                <Flame className="w-3 h-3 shrink-0" aria-hidden="true" />
-                              )}
+                              {iss.type === 'UNIT_CONVERTED' && <ArrowRightLeft className="w-3 h-3 shrink-0" aria-hidden="true" />}
+                              {iss.type === 'SPIKE_DETECTED' && <Flame className="w-3 h-3 shrink-0" aria-hidden="true" />}
                               {iss.message}
                             </li>
                           ))}

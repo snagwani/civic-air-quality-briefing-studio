@@ -90,7 +90,11 @@ export const TrendFindingSchema = z.object({
   summary: z.string(),
   citedRowIds: z.array(z.string()).min(1),
   confidence: ConfidenceLevelSchema,
-  dataCaveat: z.string().optional(),
+  dataCaveat: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
 });
 
 export const HotspotFindingSchema = z.object({
@@ -115,7 +119,11 @@ export const AudienceActionSchema = z.object({
 
 export const GeminiAnalysisResponseSchema = z.object({
   overallAssessment: z.string(),
-  insufficientDataNotice: z.string().nullable(),
+  insufficientDataNotice: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
   trends: z.array(TrendFindingSchema),
   hotspots: z.array(HotspotFindingSchema),
   actions: z.array(AudienceActionSchema),

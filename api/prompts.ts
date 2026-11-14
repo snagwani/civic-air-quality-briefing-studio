@@ -81,7 +81,11 @@ const ConfidenceLevelSchema = z.enum([
 
 export const GeminiAnalysisOutputSchema = z.object({
   overallAssessment: z.string(),
-  insufficientDataNotice: z.string().nullable(),
+  insufficientDataNotice: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
   trends: z.array(
     z.object({
       id: z.string(),
@@ -89,7 +93,11 @@ export const GeminiAnalysisOutputSchema = z.object({
       summary: z.string(),
       citedRowIds: z.array(z.string()).min(1),
       confidence: ConfidenceLevelSchema,
-      dataCaveat: z.string().optional(),
+      dataCaveat: z
+        .string()
+        .nullable()
+        .optional()
+        .transform((v) => v ?? undefined),
     })
   ),
   hotspots: z.array(

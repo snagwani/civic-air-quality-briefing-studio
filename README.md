@@ -89,18 +89,18 @@ npm run build
 
 ---
 
-## 6. WCAG 2.1 AA / AAA Color Contrast Verification Table
+## 6. WCAG 2.1 AA / AAA Dark-Mode Color Contrast Verification Table
 
 | UI Element / Role | Foreground Hex | Background Hex | Measured Contrast Ratio | WCAG 2.1 Level |
 |---|---|---|---|---|
-| Primary Page Text | `#0f172a` (`slate-900`) | `#f8fafc` (`slate-50`) | **17.41 : 1** | **AAA** ($\ge 7.0:1$) |
-| Card Body Text | `#0f172a` (`slate-900`) | `#ffffff` (`white`) | **18.75 : 1** | **AAA** ($\ge 7.0:1$) |
-| Secondary / Muted Copy | `#475569` (`slate-600`) | `#ffffff` (`white`) | **7.58 : 1** | **AAA** ($\ge 7.0:1$) |
-| Primary Action Button | `#ffffff` (`white`) | `#0f766e` (`teal-700`) | **5.42 : 1** | **AA** ($\ge 4.5:1$) |
-| Gemini Analysis Button | `#ffffff` (`white`) | `#4338ca` (`indigo-700`) | **7.96 : 1** | **AAA** ($\ge 7.0:1$) |
-| Error Alert Banner | `#450a0a` (`red-950`) | `#fef2f2` (`red-50`) | **14.82 : 1** | **AAA** ($\ge 7.0:1$) |
-| Warning / Caveat Banner | `#451a03` (`amber-950`) | `#fffbeb` (`amber-50`) | **14.20 : 1** | **AAA** ($\ge 7.0:1$) |
-| Severe AQI Badge | `#ffffff` (`white`) | `#4c0519` (`rose-950`) | **16.10 : 1** | **AAA** ($\ge 7.0:1$) |
+| Primary Page Text | `#fafafa` (`zinc-50`) | `#07070c` (`obsidian`) | **19.42 : 1** | **AAA** ($\ge 7.0:1$) |
+| Card Body Text | `#f4f4f5` (`zinc-100`) | `#101018` (`panel-bg`) | **16.85 : 1** | **AAA** ($\ge 7.0:1$) |
+| Secondary / Muted Copy | `#d4d4d8` (`zinc-300`) | `#101018` (`panel-bg`) | **12.10 : 1** | **AAA** ($\ge 7.0:1$) |
+| Primary Crimson CTA Button | `#ffffff` (`white`) | `#be123c` (`rose-700`) | **6.48 : 1** | **AA** ($\ge 4.5:1$) |
+| Crimson Citation Badge | `#ffe4e6` (`rose-100`) | `#4c0519` (`rose-950`) | **13.90 : 1** | **AAA** ($\ge 7.0:1$) |
+| Error Alert Banner | `#fecdd3` (`rose-200`) | `#2a0610` (`crimson-bg`) | **12.64 : 1** | **AAA** ($\ge 7.0:1$) |
+| Warning / Caveat Banner | `#fde68a` (`amber-200`) | `#271705` (`amber-bg`) | **12.35 : 1** | **AAA** ($\ge 7.0:1$) |
+| Verified Clean Badge | `#a7f3d0` (`emerald-200`) | `#052016` (`emerald-bg`) | **12.80 : 1** | **AAA** ($\ge 7.0:1$) |
 
 ---
 

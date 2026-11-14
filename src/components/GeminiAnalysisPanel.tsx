@@ -24,7 +24,7 @@ interface GeminiAnalysisPanelProps {
 
 /**
  * Renders Zod-validated Gemini analysis findings (trends, hotspots, and stakeholder actions)
- * with clickable row-level citation badges.
+ * with clickable row-level citation badges in Atmospheric Crimson Dark Mode.
  */
 export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
   report,
@@ -41,8 +41,8 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
 
   const renderCitationBadges = (rowIds: string[]) => (
     <div className="flex flex-wrap items-center gap-1.5 mt-2">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-        Cited Rows:
+      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+        Cited Telemetry:
       </span>
       {rowIds.map((id) => (
         <button
@@ -53,7 +53,7 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
             const el = document.getElementById(`ledger-row-${id}`);
             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }}
-          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold bg-teal-50 text-teal-900 border border-teal-300 hover:bg-teal-200 cursor-pointer"
+          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold bg-rose-950 text-rose-200 border border-rose-600/80 hover:bg-rose-700 hover:text-white cursor-pointer transition-colors"
           title={`Jump to row ${id} in Normalized Row Ledger`}
         >
           [{id}]
@@ -65,14 +65,14 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
   const renderConfidenceBadge = (conf: string) => {
     const style =
       conf === 'High'
-        ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+        ? 'bg-emerald-950/90 text-emerald-200 border-emerald-600/70'
         : conf === 'Medium'
-        ? 'bg-amber-100 text-amber-950 border-amber-300'
+        ? 'bg-amber-950/90 text-amber-200 border-amber-600/70'
         : conf === 'Low'
-        ? 'bg-orange-100 text-orange-950 border-orange-300'
-        : 'bg-red-100 text-red-950 border-red-300';
+        ? 'bg-orange-950/90 text-orange-200 border-orange-600/70'
+        : 'bg-rose-950 text-rose-200 border-rose-500';
     return (
-      <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold border ${style}`}>
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-mono font-bold border ${style}`}>
         Confidence: {conf}
       </span>
     );
@@ -90,22 +90,22 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
     <section
       aria-labelledby="gemini-analysis-heading"
       aria-live="polite"
-      className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-6"
+      className="bg-[#101018]/95 rounded-2xl border border-zinc-800/90 border-t-2 border-t-rose-600 shadow-[0_12px_40px_rgba(0,0,0,0.65)] p-5 sm:p-6 space-y-6"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-800/80">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
-            Step 2 · Live Gemini API + Zod Schema Validation
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-widest text-rose-300 bg-rose-950/80 px-3 py-1 rounded-full border border-rose-700/70">
+            Step 02 · Live Gemini API + Strict Zod Schema Gate
           </span>
           <h2
             id="gemini-analysis-heading"
-            className="text-lg sm:text-xl font-bold text-slate-900 mt-1.5"
+            className="text-lg sm:text-xl font-black text-white mt-2"
           >
-            Traceable Trends, Hotspots &amp; Role-Based Interventions
+            Traceable Trends, Smog Hotspots &amp; Stakeholder Interventions
           </h2>
-          <p className="text-sm text-slate-600">
-            Sends cleaned rows ({report.reliableRows} reliable of {report.totalRows}) to Gemini.
-            Every claim is validated with Zod and linked to exact row IDs.
+          <p className="text-sm text-zinc-300">
+            Analyzes {report.reliableRows} verified sensor rows (of {report.totalRows} total) via
+            live Gemini API. Every finding is bound to clickable <code className="font-mono text-rose-300">[R##]</code> citations.
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
             type="button"
             onClick={onRunAnalysis}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-semibold text-sm shadow-xs disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-bold text-sm shadow-[0_0_24px_rgba(225,29,72,0.5)] border border-rose-400/40 disabled:opacity-50 cursor-pointer transition-all"
           >
             {isLoading ? (
               <>
@@ -135,43 +135,43 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
         <div
           role="alert"
           aria-live="assertive"
-          className="rounded-lg bg-red-50 border border-red-300 p-4 flex items-start gap-3 text-red-950"
+          className="rounded-xl bg-[#2a0610] border border-rose-500 p-4 flex items-start gap-3 text-rose-100 shadow-[0_0_20px_rgba(225,29,72,0.25)]"
         >
-          <AlertCircle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" aria-hidden="true" />
+          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="text-sm">
-            <p className="font-bold">Live Gemini Analysis Error</p>
-            <p className="mt-0.5 text-xs">{error}</p>
+            <p className="font-bold text-white">Live Gemini Analysis Error</p>
+            <p className="mt-0.5 text-xs text-rose-200">{error}</p>
           </div>
         </div>
       )}
 
       {!analysis && !isLoading && !error && (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-          <p className="text-sm font-medium text-slate-700">
-            Ready to analyze {report.totalRows} normalized sensor rows across{' '}
-            {report.stationSummaries.length} stations.
+        <div className="rounded-xl border border-dashed border-zinc-700 bg-[#090910] p-6 text-center">
+          <p className="text-sm font-semibold text-zinc-200">
+            Ready to synthesize {report.totalRows} normalized telemetry rows across{' '}
+            {report.stationSummaries.length} municipal stations.
           </p>
-          <p className="text-xs text-slate-600 mt-1">
-            Click <strong>Run Live Gemini Analysis</strong> above to invoke{' '}
-            <code className="font-mono bg-white px-1 py-0.5 rounded border">/api/gemini</code>.
+          <p className="text-xs text-zinc-400 mt-1">
+            Click <strong className="text-rose-300">Run Live Gemini Analysis</strong> above to invoke{' '}
+            <code className="font-mono bg-zinc-900 text-rose-300 px-1.5 py-0.5 rounded border border-zinc-700">/api/gemini</code>.
           </p>
         </div>
       )}
 
       {analysis && (
         <div className="space-y-6">
-          <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-teal-900">
-                <CheckCircle className="w-4 h-4 text-teal-700" aria-hidden="true" />
-                Zod-Verified Gemini Synthesis {fromCache ? '(Cached Repeat Call)' : '(Live API)'}
+          <div className="rounded-xl bg-[#090910] border border-rose-900/70 p-4 shadow-[0_0_25px_rgba(225,29,72,0.12)]">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-rose-300">
+                <CheckCircle className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                Zod-Verified Gemini Synthesis {fromCache ? '(LRU Cache Hit)' : '(Live Gemini API)'}
               </span>
             </div>
-            <p className="text-sm text-slate-900 leading-relaxed">{analysis.overallAssessment}</p>
+            <p className="text-sm text-zinc-100 leading-relaxed">{analysis.overallAssessment}</p>
 
             {analysis.insufficientDataNotice && (
-              <div className="mt-3 rounded-lg bg-amber-50 border border-amber-300 p-3 text-xs text-amber-950">
-                <strong className="font-bold">Data Honesty Flag: </strong>
+              <div className="mt-3 rounded-lg bg-[#271705] border border-amber-500/80 p-3 text-xs text-amber-200">
+                <strong className="font-bold text-white">Data Honesty Flag: </strong>
                 {analysis.insufficientDataNotice}
               </div>
             )}
@@ -179,27 +179,26 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
 
           {/* Trends & Hotspots Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Trends */}
             <div className="space-y-3">
-              <h3 className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-800">
-                <TrendingUp className="w-4 h-4 text-indigo-700" aria-hidden="true" />
-                Key Air Quality Trends ({analysis.trends.length})
+              <h3 className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-rose-300">
+                <TrendingUp className="w-4 h-4 text-rose-500" aria-hidden="true" />
+                Key Atmospheric Trends ({analysis.trends.length})
               </h3>
               {analysis.trends.map((trend) => (
                 <article
                   key={trend.id}
-                  className="rounded-lg border border-slate-200 p-4 bg-white shadow-2xs space-y-2"
+                  className="rounded-xl border border-zinc-800 p-4 bg-[#090910] space-y-2.5 hover:border-rose-800/70 transition-colors"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <h4 className="font-bold text-slate-900 text-sm">{trend.title}</h4>
+                    <h4 className="font-bold text-white text-sm">{trend.title}</h4>
                     {renderConfidenceBadge(trend.confidence)}
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
                     {trend.summary}
                   </p>
                   {trend.dataCaveat && (
-                    <p className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
-                      <strong>Caveat:</strong> {trend.dataCaveat}
+                    <p className="text-xs text-amber-200 bg-[#271705] border border-amber-700/70 rounded-lg px-2.5 py-1.5">
+                      <strong className="text-amber-300">Telemetry Caveat:</strong> {trend.dataCaveat}
                     </p>
                   )}
                   {renderCitationBadges(trend.citedRowIds)}
@@ -207,34 +206,33 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
               ))}
             </div>
 
-            {/* Hotspots */}
             <div className="space-y-3">
-              <h3 className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-800">
-                <MapPin className="w-4 h-4 text-rose-700" aria-hidden="true" />
-                Identified Ward Hotspots ({analysis.hotspots.length})
+              <h3 className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-rose-300">
+                <MapPin className="w-4 h-4 text-rose-500" aria-hidden="true" />
+                Identified Ward Smog Hotspots ({analysis.hotspots.length})
               </h3>
               {analysis.hotspots.map((spot) => (
                 <article
                   key={spot.id}
-                  className="rounded-lg border border-slate-200 p-4 bg-white shadow-2xs space-y-2"
+                  className="rounded-xl border border-rose-950/90 p-4 bg-[#090910] space-y-2.5 shadow-[0_0_20px_rgba(225,29,72,0.08)]"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{spot.location}</h4>
-                      <span className="text-xs font-medium text-slate-600">
-                        Likely Source: {spot.likelyCause}
+                      <h4 className="font-bold text-white text-sm">{spot.location}</h4>
+                      <span className="text-xs font-mono text-rose-300">
+                        Emission Vector: {spot.likelyCause}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`px-2 py-0.5 rounded text-xs font-bold border ${
+                        className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border ${
                           spot.severity === 'Critical'
-                            ? 'bg-rose-950 text-white border-rose-800'
+                            ? 'bg-rose-600 text-white border-rose-400 shadow-[0_0_12px_rgba(225,29,72,0.5)]'
                             : spot.severity === 'High'
-                            ? 'bg-red-100 text-red-900 border-red-300'
+                            ? 'bg-red-950 text-red-200 border-red-500/80'
                             : spot.severity === 'Moderate'
-                            ? 'bg-amber-100 text-amber-900 border-amber-300'
-                            : 'bg-slate-100 text-slate-800 border-slate-300'
+                            ? 'bg-amber-950 text-amber-200 border-amber-500/80'
+                            : 'bg-zinc-900 text-zinc-200 border-zinc-700'
                         }`}
                       >
                         {spot.severity}
@@ -242,7 +240,7 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
                       {renderConfidenceBadge(spot.confidence)}
                     </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
                     {spot.explanation}
                   </p>
                   {renderCitationBadges(spot.citedRowIds)}
@@ -254,7 +252,7 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
           {/* Prioritized Local Actions by Audience */}
           <div className="pt-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-slate-800">
+              <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-rose-300">
                 Prioritized Local Interventions by Stakeholder Role
               </h3>
               <div
@@ -269,10 +267,10 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
                       type="button"
                       onClick={() => setSelectedAudience(aud)}
                       aria-pressed={selectedAudience === aud}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer ${
                         selectedAudience === aud
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                          ? 'bg-rose-700 text-white border-rose-400 shadow-[0_0_15px_rgba(225,29,72,0.4)]'
+                          : 'bg-[#090910] text-zinc-300 border-zinc-700 hover:border-rose-700'
                       }`}
                     >
                       {aud}
@@ -294,24 +292,24 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
                 return (
                   <article
                     key={act.id}
-                    className="rounded-xl border border-slate-200 p-4 bg-slate-50/60 flex flex-col justify-between space-y-3"
+                    className="rounded-xl border border-zinc-800 p-4 bg-[#090910] flex flex-col justify-between space-y-3 hover:border-rose-800/80 transition-colors"
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900 bg-white px-2.5 py-1 rounded-md border border-slate-300">
-                          <Icon className="w-3.5 h-3.5 text-teal-700" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-white bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-700">
+                          <Icon className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
                           {act.audience}
                         </span>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-950 border border-indigo-200">
+                        <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-rose-950/90 text-rose-200 border border-rose-700/80">
                           {act.priority}
                         </span>
                       </div>
-                      <h4 className="font-bold text-slate-900 text-sm leading-snug">
+                      <h4 className="font-bold text-white text-sm leading-snug">
                         {act.action}
                       </h4>
-                      <p className="text-xs text-slate-700 leading-relaxed">{act.rationale}</p>
+                      <p className="text-xs text-zinc-300 leading-relaxed">{act.rationale}</p>
                     </div>
-                    <div className="pt-2 border-t border-slate-200/80 space-y-1.5">
+                    <div className="pt-2 border-t border-zinc-800 space-y-1.5">
                       {renderConfidenceBadge(act.confidence)}
                       {renderCitationBadges(act.citedRowIds)}
                     </div>

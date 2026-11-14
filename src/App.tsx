@@ -1,4 +1,4 @@
-import { Wind, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Flame, ShieldCheck, Radio, Activity } from 'lucide-react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { DataIntakePanel } from './components/DataIntakePanel';
 import { QualityReportPanel } from './components/QualityReportPanel';
@@ -6,7 +6,7 @@ import { GeminiAnalysisPanel } from './components/GeminiAnalysisPanel';
 import { BriefsAndComparisonPanel } from './components/BriefsAndComparisonPanel';
 
 /**
- * Inner workspace component consuming the memoized AppContext.
+ * Inner workspace component consuming the memoized AppContext in Atmospheric Dark Mode.
  */
 function StudioWorkspace() {
   const {
@@ -40,64 +40,67 @@ function StudioWorkspace() {
   } = useAppContext();
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-[#07070c] text-zinc-50 selection:bg-rose-600 selection:text-white">
       <a
         href="#main-workspace"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-teal-800 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-rose-700 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg"
       >
         Skip to main content
       </a>
 
-      <header className="bg-slate-900 text-white border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-700 flex items-center justify-center shadow-xs shrink-0">
-              <Wind className="w-6 h-6 text-white" aria-hidden="true" />
+      <header className="sticky top-0 z-30 bg-[#090910]/90 backdrop-blur-xl border-b border-rose-950/80 shadow-[0_4px_30px_rgba(225,29,72,0.12)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-rose-600 to-red-900 border border-rose-400/50 flex items-center justify-center shadow-[0_0_24px_rgba(225,29,72,0.55)] shrink-0">
+              <Flame className="w-6 h-6 text-white" aria-hidden="true" />
+              <span
+                className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping"
+                aria-hidden="true"
+              />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-black tracking-tight text-white">
                   Civic Air Quality Briefing Studio
                 </h1>
-                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider bg-teal-950 text-teal-200 border border-teal-700 px-2 py-0.5 rounded-full">
-                  <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest bg-rose-950/90 text-rose-200 border border-rose-600/60 px-2.5 py-0.5 rounded-full">
+                  <ShieldCheck className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
                   CPCB Trust Layer
                 </span>
               </div>
-              <p className="text-xs text-slate-300">
-                Deterministic Data Hygiene + Row-Cited Gemini Intelligence for Indian Wards,
-                Housing Societies &amp; Schools
+              <p className="text-xs text-zinc-300 mt-0.5">
+                Atmospheric Smog Telemetry · Deterministic Hygiene + Row-Cited Gemini Intelligence
               </p>
             </div>
           </div>
 
-          <nav aria-label="Workflow status steps" className="flex items-center gap-2 text-xs">
+          <nav aria-label="Workflow status steps" className="flex flex-wrap items-center gap-2 text-xs">
             <span
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-3 py-1.5 rounded-lg font-mono font-semibold border transition-all ${
                 report
-                  ? 'bg-teal-900/80 text-teal-100 border-teal-700'
-                  : 'bg-slate-800 text-slate-300 border-slate-700'
+                  ? 'bg-rose-950/90 text-rose-100 border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                  : 'bg-zinc-900/90 text-zinc-300 border-zinc-800'
               }`}
             >
-              1. Intake &amp; CPCB Audit {report && '✓'}
+              01 · INTAKE &amp; CPCB AUDIT {report && '✓'}
             </span>
             <span
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-3 py-1.5 rounded-lg font-mono font-semibold border transition-all ${
                 analysis
-                  ? 'bg-teal-900/80 text-teal-100 border-teal-700'
-                  : 'bg-slate-800 text-slate-300 border-slate-700'
+                  ? 'bg-rose-950/90 text-rose-100 border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                  : 'bg-zinc-900/90 text-zinc-300 border-zinc-800'
               }`}
             >
-              2. Gemini Analysis {analysis && '✓'}
+              02 · GEMINI TELEMETRY {analysis && '✓'}
             </span>
             <span
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-3 py-1.5 rounded-lg font-mono font-semibold border transition-all ${
                 brief
-                  ? 'bg-teal-900/80 text-teal-100 border-teal-700'
-                  : 'bg-slate-800 text-slate-300 border-slate-700'
+                  ? 'bg-rose-950/90 text-rose-100 border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                  : 'bg-zinc-900/90 text-zinc-300 border-zinc-800'
               }`}
             >
-              3. Multilingual Briefs {brief && '✓'}
+              03 · MULTILINGUAL DISPATCH {brief && '✓'}
             </span>
           </nav>
         </div>
@@ -107,22 +110,29 @@ function StudioWorkspace() {
         id="main-workspace"
         className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6"
       >
-        <div className="rounded-xl bg-teal-950 text-teal-50 p-4 border border-teal-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="rounded-xl bg-gradient-to-r from-[#18070d] via-[#120b14] to-[#18070d] text-rose-100 p-4 border border-rose-800/70 shadow-[0_0_30px_rgba(225,29,72,0.12)] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
           <div className="flex items-start sm:items-center gap-2.5">
-            <CheckCircle2
-              className="w-4 h-4 text-teal-400 shrink-0 mt-0.5 sm:mt-0"
+            <Radio
+              className="w-4 h-4 text-rose-400 shrink-0 mt-0.5 sm:mt-0 animate-pulse"
               aria-hidden="true"
             />
             <span>
-              <strong>Zero-Hallucination Civic Pipeline:</strong> Deterministic code calculates
-              unit conversions, CPCB AQI sub-indices, and station reliability scores. Gemini
-              interprets trends and writes advisories with clickable{' '}
-              <code className="font-mono">[R##]</code> row citations.
+              <strong className="text-white uppercase tracking-wider font-mono">
+                Zero-Hallucination Atmospheric Pipeline:
+              </strong>{' '}
+              Deterministic code normalizes mixed chemical units (<code className="font-mono text-rose-300">ppm</code>,{' '}
+              <code className="font-mono text-rose-300">mg/m³</code> → <code className="font-mono text-rose-300">µg/m³</code>)
+              and flags sensor spikes before Gemini synthesizes interventions with clickable{' '}
+              <code className="font-mono text-rose-200 bg-rose-950 px-1.5 py-0.5 rounded border border-rose-700">
+                [R##]
+              </code>{' '}
+              citations.
             </span>
           </div>
-          <span className="text-teal-300 font-mono whitespace-nowrap">
-            Languages: English · हिन्दी · मराठी
-          </span>
+          <div className="flex items-center gap-2 font-mono text-rose-300 whitespace-nowrap">
+            <Activity className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
+            <span>DISPATCH: ENGLISH · हिन्दी · मराठी</span>
+          </div>
         </div>
 
         <DataIntakePanel
@@ -171,14 +181,13 @@ function StudioWorkspace() {
         )}
       </main>
 
-      <footer className="bg-white border-t border-slate-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600">
+      <footer className="bg-[#090910] border-t border-zinc-800/80 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-400 font-mono">
           <span>
-            Civic Air Quality Briefing Studio · Built with India CPCB Standards &amp; Live Gemini
-            API
+            CIVIC AIR QUALITY BRIEFING STUDIO · INDIA CPCB NATIONAL AQI TELEMETRY
           </span>
-          <span>
-            All AI responses validated with Zod schemas · Row-level citation traceability enabled
+          <span className="text-rose-400">
+            ZOD-VALIDATED GEMINI API · ROW-LEVEL [R##] TRACEABILITY ACTIVE
           </span>
         </div>
       </footer>
