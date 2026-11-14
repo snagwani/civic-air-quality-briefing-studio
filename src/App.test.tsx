@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import App from './App';
 import { BoundedLruCache } from './lib/lruCache';
 import { checkSlidingWindowRateLimit, resetRateLimitBuckets } from '../api/security';
@@ -22,8 +22,10 @@ describe('React Component Integration Tests (App.test.tsx)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders the Civic Air Quality Briefing Studio header and intake controls', () => {
-    render(<App />);
+  it('renders the Civic Air Quality Briefing Studio header and intake controls', async () => {
+    await act(async () => {
+      render(<App />);
+    });
     expect(
       screen.getByRole('heading', { name: /Civic Air Quality Briefing Studio/i })
     ).toBeTruthy();
@@ -32,8 +34,10 @@ describe('React Component Integration Tests (App.test.tsx)', () => {
     ).toBeTruthy();
   });
 
-  it('shows an accessible validation error alert when parsing empty input', () => {
-    render(<App />);
+  it('shows an accessible validation error alert when parsing empty input', async () => {
+    await act(async () => {
+      render(<App />);
+    });
     const parseBtn = screen.getByRole('button', {
       name: /Parse, Normalize & Audit Data Quality/i,
     });
@@ -43,8 +47,10 @@ describe('React Component Integration Tests (App.test.tsx)', () => {
     expect(alert.textContent).toContain('Input is empty');
   });
 
-  it('loads the test input CSV, normalizes messy rows, and renders the Quality Report ledger', () => {
-    render(<App />);
+  it('loads the test input CSV, normalizes messy rows, and renders the Quality Report ledger', async () => {
+    await act(async () => {
+      render(<App />);
+    });
     const loadSampleBtn = screen.getByRole('button', {
       name: /Load Test Input CSV/i,
     });
