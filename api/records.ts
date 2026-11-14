@@ -40,12 +40,16 @@ let serverBriefStore: StoredBrief[] = [];
  */
 export default async function recordsHandler(req: VercelRequest, res: VercelResponse) {
   const config = getServerConfig();
-  const expectedToken = config?.apiAccessToken ?? 'civic-trust-verified-session-v1';
+  if (!config) {
+    return res.status(500).json({
+      error: 'Server configuration error: GEMINI_API_KEY is missing in environment variables.',
+    });
+  }
 
   const passedSecurity = enforceApiSecurity(req, res, {
-    expectedToken,
-    windowMs: config?.rateLimitWindowMs ?? 60_000,
-    maxRequests: config?.rateLimitMaxRequests ?? 25,
+    expectedToken: config.apiAccessToken,
+    windowMs: config.rateLimitWindowMs,
+    maxRequests: config.rateLimitMaxRequests,
   });
   if (!passedSecurity) return;
 

@@ -32,95 +32,98 @@ function extractCleanJson(text: string): unknown {
 }
 
 /**
- * Normalizes minor LLM enum casing, translated enum labels, or null optionals before strict Zod validation.
+ * Canonicalizes recognizable enum spellings and strips null optionals before strict Zod validation.
+ * Never invents content: unrecognized or missing values are left as-is so validation fails,
+ * the request is retried, and an honest error is surfaced instead of fabricated output.
  * @param raw - Parsed JSON object from Gemini
- * @param fallbackRowId - Valid fallback row ID if citedRowIds is empty
- * @param meta - Request mode and target language/readingLevel
+ * @param meta - Request mode and requested language/readingLevel (echoed, not guessed)
  * @returns Normalized JSON object ready for Zod schema parsing
  */
 function normalizeRawGeminiJson(
   raw: unknown,
-  fallbackRowId: string,
   meta: { mode: 'analyze' | 'brief'; language?: string; readingLevel?: string }
 ): unknown {
   if (!raw || typeof raw !== 'object') return raw;
   const obj = raw as Record<string, unknown>;
-  const normConf = (c: unknown): string => {
-    const s = String(c ?? '').toLowerCase();
-    if (s.includes('not enough') || s.includes('insufficient')) return 'Not Enough Reliable Data';
-    if (s.includes('high')) return 'High';
-    return s.includes('low') ? 'Low' : 'Medium';
+  const pick = (value: unknown, rules: Array<[RegExp, string]>): unknown => {
+    const s = String(value ?? '').toLowerCase();
+    const hit = rules.find(([re]) => re.test(s));
+    return hit ? hit[1] : value;
   };
-  const normSeverity = (sev: unknown): string => {
-    const s = String(sev ?? '').toLowerCase();
-    if (s.includes('crit') || s.includes('severe') || s.includes('very poor')) return 'Critical';
-    if (s.includes('high') || s.includes('poor')) return 'High';
-    if (s.includes('mod')) return 'Moderate';
-    return s.includes('low') || s.includes('good') ? 'Low' : 'Uncertain';
-  };
-  const normAudience = (aud: unknown): string => {
-    const s = String(aud ?? '').toLowerCase();
-    if (s.includes('school') || s.includes('principal')) return 'School Principal';
-    return s.includes('housing') || s.includes('rwa') || s.includes('society') ? 'Housing Society' : 'Ward Officer';
-  };
-  const normPriority = (p: unknown): string => {
-    const s = String(p ?? '').toLowerCase();
-    if (s.includes('imm') || s.includes('0-6') || s.includes('urgent')) return 'Immediate (0-6 hrs)';
-    return s.includes('prev') || s.includes('long') ? 'Preventive' : 'Short-Term (24-48 hrs)';
-  };
-  const normIds = (ids: unknown): string[] =>
-    Array.isArray(ids) && ids.length > 0 ? ids.map(String) : [fallbackRowId];
+  const normConf = (c: unknown) =>
+    pick(c, [
+      [/not enough|insufficient/, 'Not Enough Reliable Data'],
+      [/^high/, 'High'],
+      [/^medium|^moderate/, 'Medium'],
+      [/^low/, 'Low'],
+    ]);
+  const normSeverity = (v: unknown) =>
+    pick(v, [
+      [/^crit|^severe/, 'Critical'],
+      [/^high/, 'High'],
+      [/^mod/, 'Moderate'],
+      [/^low/, 'Low'],
+      [/^uncertain/, 'Uncertain'],
+    ]);
+  const normAudience = (v: unknown) =>
+    pick(v, [
+      [/school|principal/, 'School Principal'],
+      [/housing|rwa|society/, 'Housing Society'],
+      [/ward|officer/, 'Ward Officer'],
+    ]);
+  const normPriority = (v: unknown) =>
+    pick(v, [
+      [/^imm|0-6|urgent/, 'Immediate (0-6 hrs)'],
+      [/^short|24-48/, 'Short-Term (24-48 hrs)'],
+      [/^prev/, 'Preventive'],
+    ]);
+  const optional = (v: unknown) => (v === null || v === '' ? undefined : v);
 
   if (meta.mode === 'analyze') {
-    if (Array.isArray(obj.trends)) {
-      obj.trends = obj.trends.map((t: Record<string, unknown>, idx: number) => ({
-        ...t, id: String(t.id ?? `T${idx + 1}`), title: String(t.title ?? 'Trend'),
-        summary: String(t.summary ?? ''), confidence: normConf(t.confidence),
-        citedRowIds: normIds(t.citedRowIds), dataCaveat: t.dataCaveat ? String(t.dataCaveat) : undefined,
-      }));
-    }
-    if (Array.isArray(obj.hotspots)) {
-      obj.hotspots = obj.hotspots.map((h: Record<string, unknown>, idx: number) => ({
-        ...h, id: String(h.id ?? `H${idx + 1}`), location: String(h.location ?? 'Ward Station'),
-        likelyCause: String(h.likelyCause ?? 'Local emissions'), explanation: String(h.explanation ?? ''),
-        severity: normSeverity(h.severity), confidence: normConf(h.confidence), citedRowIds: normIds(h.citedRowIds),
-      }));
-    }
-    if (Array.isArray(obj.actions)) {
-      obj.actions = obj.actions.map((a: Record<string, unknown>, idx: number) => ({
-        ...a, id: String(a.id ?? `A${idx + 1}`), action: String(a.action ?? ''),
-        rationale: String(a.rationale ?? ''), audience: normAudience(a.audience),
-        priority: normPriority(a.priority), confidence: normConf(a.confidence), citedRowIds: normIds(a.citedRowIds),
-      }));
-    }
+    const mapList = (list: unknown, prefix: string, fn: (i: Record<string, unknown>) => Record<string, unknown>) =>
+      Array.isArray(list)
+        ? list.map((item: Record<string, unknown>, idx: number) => ({
+            ...fn(item),
+            id: String(item.id ?? `${prefix}${idx + 1}`),
+          }))
+        : list;
+    obj.trends = mapList(obj.trends, 'T', (t) => ({
+      ...t,
+      confidence: normConf(t.confidence),
+      dataCaveat: optional(t.dataCaveat),
+    }));
+    obj.hotspots = mapList(obj.hotspots, 'H', (h) => ({
+      ...h,
+      severity: normSeverity(h.severity),
+      confidence: normConf(h.confidence),
+    }));
+    obj.actions = mapList(obj.actions, 'A', (a) => ({
+      ...a,
+      audience: normAudience(a.audience),
+      priority: normPriority(a.priority),
+      confidence: normConf(a.confidence),
+    }));
   } else {
-    obj.language = meta.language ?? 'English';
-    obj.readingLevel = meta.readingLevel ?? 'Simple';
-    const note = (obj.internalBriefingNote ?? {}) as Record<string, unknown>;
-    const dirs = Array.isArray(note.operationalDirectives) ? note.operationalDirectives.map(String) : [];
-    obj.internalBriefingNote = {
-      subject: String(note.subject ?? 'Municipal Air Quality Briefing'),
-      executiveSummary: String(note.executiveSummary ?? ''),
-      operationalDirectives: dirs.length > 0 ? dirs : ['Enforce CPCB dust & emission mitigation across flagged stations.'],
-      dataReliabilityNote: String(note.dataReliabilityNote ?? 'Verified against CPCB sensor hygiene audit.'),
-      citedRowIds: normIds(note.citedRowIds),
-    };
-    const adv = (obj.citizenAdvisory ?? {}) as Record<string, unknown>;
-    const dos = Array.isArray(adv.dosAndDonts) ? adv.dosAndDonts.map(String) : [];
-    const vg = (adv.vulnerableGroups ?? {}) as Record<string, unknown>;
-    obj.citizenAdvisory = {
-      headline: String(adv.headline ?? 'Public Air Quality Advisory'),
-      publicMessage: String(adv.publicMessage ?? ''),
-      dosAndDonts: dos.length >= 2 ? dos : [...dos, 'Do: Wear N95 masks outdoors during peak smog.', "Don't: Burn waste or exercise near heavy traffic."].slice(0, 3),
-      vulnerableGroups: {
-        children: String(vg.children ?? 'Move school physical training and assemblies indoors.'),
-        olderAdults: String(vg.olderAdults ?? 'Avoid early morning outdoor walks during high AQI hours.'),
-        sensitiveIndividuals: String(vg.sensitiveIndividuals ?? 'Keep rescue inhalers accessible and remain in filtered indoor spaces.'),
-      },
-      citedRowIds: normIds(adv.citedRowIds),
-    };
+    obj.language = meta.language;
+    obj.readingLevel = meta.readingLevel;
   }
   return obj;
+}
+
+/**
+ * Keeps only citations that exist in the submitted dataset. Never fabricates a citation:
+ * if a finding ends up with none, the response is rejected so the call retries honestly.
+ * @param ids - Row IDs cited by Gemini
+ * @param validRowSet - Row IDs present in the request payload
+ * @param requireOne - Whether at least one valid citation is mandatory
+ * @returns Valid cited row IDs
+ */
+function keepValidCitations(ids: string[], validRowSet: Set<string>, requireOne: boolean): string[] {
+  const filtered = ids.filter((id) => validRowSet.has(id));
+  if (requireOne && filtered.length === 0) {
+    throw new Error('A finding cited no valid row IDs from the submitted dataset.');
+  }
+  return filtered;
 }
 
 /**
@@ -155,7 +158,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const payload = parsedPayload.data;
   const validRowSet = new Set(payload.rows.map((r) => r.rowId));
-  const fallbackRowId = payload.rows[0].rowId;
   const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
   const prompt = payload.mode === 'analyze' ? buildAnalyzePrompt(payload) : buildBriefPrompt(payload);
   let lastError = 'Unknown validation error';
@@ -177,15 +179,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
       });
       if (!response.text) throw new Error('Gemini returned an empty response.');
-      const jsonObj = normalizeRawGeminiJson(extractCleanJson(response.text), fallbackRowId, {
+      const jsonObj = normalizeRawGeminiJson(extractCleanJson(response.text), {
         mode: payload.mode,
         language: payload.mode === 'brief' ? payload.language : undefined,
         readingLevel: payload.mode === 'brief' ? payload.readingLevel : undefined,
       });
-      const sanitizeIds = (ids: string[]) => {
-        const filtered = ids.filter((id) => validRowSet.has(id));
-        return filtered.length > 0 ? filtered : [fallbackRowId];
-      };
       if (payload.mode === 'analyze') {
         const validated = GeminiAnalysisOutputSchema.parse(jsonObj);
         return res.status(200).json({
@@ -193,9 +191,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           attempt,
           data: {
             ...validated,
-            trends: validated.trends.map((t) => ({ ...t, citedRowIds: sanitizeIds(t.citedRowIds) })),
-            hotspots: validated.hotspots.map((h) => ({ ...h, citedRowIds: sanitizeIds(h.citedRowIds) })),
-            actions: validated.actions.map((a) => ({ ...a, citedRowIds: sanitizeIds(a.citedRowIds) })),
+            trends: validated.trends.map((t) => ({ ...t, citedRowIds: keepValidCitations(t.citedRowIds, validRowSet, true) })),
+            hotspots: validated.hotspots.map((h) => ({ ...h, citedRowIds: keepValidCitations(h.citedRowIds, validRowSet, true) })),
+            actions: validated.actions.map((a) => ({ ...a, citedRowIds: keepValidCitations(a.citedRowIds, validRowSet, true) })),
           },
         });
       } else {
@@ -207,11 +205,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ...validated,
             internalBriefingNote: {
               ...validated.internalBriefingNote,
-              citedRowIds: sanitizeIds(validated.internalBriefingNote.citedRowIds),
+              citedRowIds: keepValidCitations(validated.internalBriefingNote.citedRowIds, validRowSet, false),
             },
             citizenAdvisory: {
               ...validated.citizenAdvisory,
-              citedRowIds: sanitizeIds(validated.citizenAdvisory.citedRowIds),
+              citedRowIds: keepValidCitations(validated.citizenAdvisory.citedRowIds, validRowSet, false),
             },
           },
         });
