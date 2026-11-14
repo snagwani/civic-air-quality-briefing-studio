@@ -4,7 +4,7 @@ const ServerEnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is required'),
   API_ACCESS_TOKEN: z.string().default('civic-trust-verified-session-v1'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60_000),
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(25),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(60),
 });
 
 export interface ServerConfig {
@@ -34,6 +34,6 @@ export function getServerConfig(
     apiAccessToken: parsed.data.API_ACCESS_TOKEN,
     rateLimitWindowMs: parsed.data.RATE_LIMIT_WINDOW_MS,
     rateLimitMaxRequests: parsed.data.RATE_LIMIT_MAX_REQUESTS,
-    candidateModels: ['gemini-3.1-flash-lite', 'gemini-3.1-flash-lite'] as const,
+    candidateModels: ['gemini-3.1-flash-lite', 'gemini-3.5-flash'] as const,
   };
 }
