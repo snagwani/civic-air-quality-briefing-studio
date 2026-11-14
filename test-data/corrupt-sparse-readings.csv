@@ -1,0 +1,5 @@
+Ward,Station,Timestamp,PM2.5,PM10,NO2,SO2,Units
+Ward M-East,Govandi Shivaji Nagar Depot,invalid-date,-45,NA,NA,NA,ug/m3
+Ward M-East,Govandi Shivaji Nagar Depot,14/11/2026 10:00,6200,NA,-12,NA,ug/m3
+Ward H-East,Bandra Kurla Municipal School,bad-time,NA,NA,NA,NA,ug/m3
+Ward K-West,Andheri Lokhandwala RWA Gate,14/11/2026 10:00,142,230,54,18,ug/m3

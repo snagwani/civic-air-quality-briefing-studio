@@ -1,21 +1,8 @@
 import React, { memo, useRef, useState } from 'react';
 import { Upload, FileSpreadsheet, Trash2, Sparkles, AlertCircle, Flame, GitCompare } from 'lucide-react';
 import rawSampleCsv from '../../test-data/messy-ward-readings.csv?raw';
-
-const FOLLOW_UP_SHIFT_CSV = `Ward,Station,Timestamp,PM2.5,PM10,NO2,SO2,Units
-Ward K-West,Andheri Lokhandwala RWA Gate,14/11/2026 18:00,52,118,34,14,ug/m3
-Ward K-West,Andheri Lokhandwala RWA Gate,14/11/2026 19:00,48,110,31,12,ug/m3
-Ward H-East,Bandra Kurla Municipal School,14/11/2026 18:00,86,165,44,16,ug/m3
-Ward H-East,Bandra Kurla Municipal School,14/11/2026 19:00,79,154,40,15,ug/m3
-Ward M-East,Govandi Shivaji Nagar Depot,14/11/2026 18:00,168,310,76,29,ug/m3
-Ward M-East,Govandi Shivaji Nagar Depot,14/11/2026 19:00,154,295,72,26,ug/m3
-Ward D,Malabar Hill Reservoir Garden,14/11/2026 18:00,24,48,19,8,ug/m3`;
-
-const CORRUPT_SPARSE_CSV = `Ward,Station,Timestamp,PM2.5,PM10,NO2,SO2,Units
-Ward M-East,Govandi Shivaji Nagar Depot,invalid-date,-45,NA,NA,NA,ug/m3
-Ward M-East,Govandi Shivaji Nagar Depot,14/11/2026 10:00,6200,NA,-12,NA,ug/m3
-Ward H-East,Bandra Kurla Municipal School,bad-time,NA,NA,NA,NA,ug/m3
-Ward K-West,Andheri Lokhandwala RWA Gate,14/11/2026 10:00,142,230,54,18,ug/m3`;
+import followUpShiftCsv from '../../test-data/followup-shift-readings.csv?raw';
+import corruptSparseCsv from '../../test-data/corrupt-sparse-readings.csv?raw';
 
 interface DataIntakePanelProps {
   rawInput: string;
@@ -115,7 +102,7 @@ export const DataIntakePanel: React.FC<DataIntakePanelProps> = memo(({
             type="button"
             onClick={() => {
               setFileError(null);
-              onRawInputChange(FOLLOW_UP_SHIFT_CSV);
+              onRawInputChange(followUpShiftCsv.trim());
               onBriefLabelChange('Evening Mitigation Shift (Follow-Up)');
             }}
             disabled={isBusy}
@@ -129,7 +116,7 @@ export const DataIntakePanel: React.FC<DataIntakePanelProps> = memo(({
             type="button"
             onClick={() => {
               setFileError(null);
-              onRawInputChange(CORRUPT_SPARSE_CSV);
+              onRawInputChange(corruptSparseCsv.trim());
               onBriefLabelChange('Corrupt Sensor Outage Log');
             }}
             disabled={isBusy}
