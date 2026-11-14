@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -15,7 +15,11 @@ interface QualityReportPanelProps {
   highlightedRowId: string | null;
 }
 
-export const QualityReportPanel: React.FC<QualityReportPanelProps> = ({
+/**
+ * Renders the deterministic CPCB Data Quality & Normalization Report,
+ * Station Reliability Scorecard, and Normalized Row Ledger with row-ID highlighting.
+ */
+export const QualityReportPanel: React.FC<QualityReportPanelProps> = memo(({
   report,
   highlightedRowId,
 }) => {
@@ -315,4 +319,4 @@ export const QualityReportPanel: React.FC<QualityReportPanelProps> = ({
       </div>
     </section>
   );
-};
+});

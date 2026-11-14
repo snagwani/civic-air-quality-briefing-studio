@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import {
   Cpu,
   AlertCircle,
@@ -22,7 +22,11 @@ interface GeminiAnalysisPanelProps {
   onSelectRowId: (rowId: string) => void;
 }
 
-export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = ({
+/**
+ * Renders Zod-validated Gemini analysis findings (trends, hotspots, and stakeholder actions)
+ * with clickable row-level citation badges.
+ */
+export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = memo(({
   report,
   analysis,
   isLoading,
@@ -61,12 +65,12 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = ({
   const renderConfidenceBadge = (conf: string) => {
     const style =
       conf === 'High'
-        ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+        ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
         : conf === 'Medium'
-        ? 'bg-amber-100 text-amber-900 border-amber-300'
+        ? 'bg-amber-100 text-amber-950 border-amber-300'
         : conf === 'Low'
-        ? 'bg-orange-100 text-orange-900 border-orange-300'
-        : 'bg-red-100 text-red-900 border-red-300';
+        ? 'bg-orange-100 text-orange-950 border-orange-300'
+        : 'bg-red-100 text-red-950 border-red-300';
     return (
       <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold border ${style}`}>
         Confidence: {conf}
@@ -74,10 +78,13 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = ({
     );
   };
 
-  const filteredActions =
-    analysis?.actions.filter(
-      (a) => selectedAudience === 'All' || a.audience === selectedAudience
-    ) ?? [];
+  const filteredActions = useMemo(
+    () =>
+      analysis?.actions.filter(
+        (a) => selectedAudience === 'All' || a.audience === selectedAudience
+      ) ?? [],
+    [analysis, selectedAudience]
+  );
 
   return (
     <section
@@ -317,4 +324,4 @@ export const GeminiAnalysisPanel: React.FC<GeminiAnalysisPanelProps> = ({
       )}
     </section>
   );
-};
+});

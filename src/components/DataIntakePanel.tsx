@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { memo, useRef, useState } from 'react';
 import { Upload, FileSpreadsheet, Trash2, Sparkles, AlertCircle } from 'lucide-react';
 import rawSampleCsv from '../../test-data/messy-ward-readings.csv?raw';
 
@@ -12,7 +12,11 @@ interface DataIntakePanelProps {
   isBusy: boolean;
 }
 
-export const DataIntakePanel: React.FC<DataIntakePanelProps> = ({
+/**
+ * Provides CSV/TSV paste and file upload controls for raw sensor intake,
+ * including size/extension validation and one-click `/test-data` loading.
+ */
+export const DataIntakePanel: React.FC<DataIntakePanelProps> = memo(({
   rawInput,
   onRawInputChange,
   briefLabel,
@@ -205,4 +209,4 @@ export const DataIntakePanel: React.FC<DataIntakePanelProps> = ({
       </div>
     </section>
   );
-};
+});

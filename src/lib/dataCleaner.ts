@@ -67,6 +67,13 @@ function splitDelimitedLine(line: string, delimiter: string): string[] {
   return result;
 }
 
+/**
+ * Normalizes a heterogeneous timestamp string (DD/MM/YYYY, DD-MM-YYYY, or ISO 8601)
+ * into a canonical `YYYY-MM-DD HH:mm` format.
+ *
+ * @param raw - Raw timestamp string from CSV/TSV cell
+ * @returns Normalized timestamp string or null if missing/unparseable
+ */
 export function normalizeDateString(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed || MISSING_TOKENS.has(trimmed.toLowerCase())) return null;
@@ -148,6 +155,15 @@ interface ParsedMeasurement {
   note?: string;
 }
 
+/**
+ * Parses a raw pollutant cell string, normalizes units (`mg/m³`, `ppm`, `ppb` -> `µg/m³`),
+ * flags physical unit conflicts, and validates against physical sensor ceiling bounds.
+ *
+ * @param rawCell - Raw cell string (e.g., "0.145 mg/m3", "0.032 ppm", "-18", "NA")
+ * @param rowUnitHint - Default unit specified in the row's Units column or header
+ * @param pollutant - Pollutant identifier ('PM2.5' | 'PM10' | 'NO2' | 'SO2')
+ * @returns ParsedMeasurement containing normalized µg/m³ value and audit flags
+ */
 export function parseAndNormalizePollutant(
   rawCell: string | undefined,
   rowUnitHint: string,
@@ -400,6 +416,14 @@ function mapColumns(headers: string[]): ColumnMap {
   return map;
 }
 
+/**
+ * Deterministically parses, normalizes, and audits a raw CSV/TSV air quality table in O(N) time.
+ * Assigns traceable row IDs (`R01`..`R##`), computes India CPCB AQI sub-indices, detects station spikes,
+ * and builds a comprehensive QualityReport.
+ *
+ * @param rawInput - Raw CSV, TSV, or semicolon-delimited table text
+ * @returns Complete deterministic QualityReport
+ */
 export function parseAndCleanAirQualityData(rawInput: string): QualityReport {
   if (!rawInput || !rawInput.trim()) {
     throw new Error('Input is empty. Please paste a CSV/table or upload a file with air quality readings.');

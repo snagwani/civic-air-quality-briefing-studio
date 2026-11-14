@@ -8,18 +8,104 @@ import {
   type SavedBriefRecord,
   type SupportedLanguage,
 } from '../types/airQuality';
+import { getClientConfig } from './config';
+import { BoundedLruCache, hashPayloadKey } from './lruCache';
 
-const analysisCache = new Map<string, GeminiAnalysisResponse>();
-const briefCache = new Map<string, GeminiBriefResponse>();
+const clientConfig = getClientConfig();
+const analysisCache = new BoundedLruCache<GeminiAnalysisResponse>(
+  clientConfig.lruCacheMaxEntries,
+  clientConfig.lruCacheTtlMs
+);
+const briefCache = new BoundedLruCache<GeminiBriefResponse>(
+  clientConfig.lruCacheMaxEntries,
+  clientConfig.lruCacheTtlMs
+);
 
-function hashString(input: string): string {
-  let hash = 5381;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash * 33) ^ input.charCodeAt(i);
+/**
+ * Executes an authenticated JSON POST request with an AbortController timeout wrapper.
+ * Distinguishes network timeouts (AbortError), rate limits (429), auth errors (401), and server faults.
+ *
+ * @param url - Target API endpoint path
+ * @param payload - Serializable request body
+ * @param timeoutMs - Request timeout in milliseconds
+ * @returns Parsed JSON response object
+ */
+async function postWithTimeout(
+  url: string,
+  payload: unknown,
+  timeoutMs = clientConfig.requestTimeoutMs
+): Promise<Record<string, unknown>> {
+  const controller = new AbortController();
+  const timerId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${clientConfig.sessionToken}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(timerId);
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(
+        `Request timed out after ${Math.round(timeoutMs / 1000)}s. Please retry.`
+      );
+    }
+    throw new Error(
+      'Network error while connecting to /api/gemini. Please check your internet connection or serverless API status.'
+    );
+  } finally {
+    clearTimeout(timerId);
   }
-  return (hash >>> 0).toString(36);
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await response.json()) as Record<string, unknown>;
+  } catch {
+    throw new Error(
+      `Server returned status ${response.status} with a non-JSON response. Ensure the /api/gemini serverless route is active.`
+    );
+  }
+
+  if (response.status === 429) {
+    throw new Error(
+      typeof body.error === 'string'
+        ? body.error
+        : 'Rate limit exceeded (HTTP 429). Please wait before retrying.'
+    );
+  }
+
+  if (response.status === 401) {
+    throw new Error(
+      typeof body.error === 'string'
+        ? body.error
+        : 'Unauthorized request (HTTP 401): Invalid session token.'
+    );
+  }
+
+  if (!response.ok || !body.ok) {
+    const errMsg =
+      typeof body.error === 'string'
+        ? body.error
+        : `Gemini request failed with HTTP status ${response.status}.`;
+    throw new Error(errMsg);
+  }
+
+  return body;
 }
 
+/**
+ * Sends deterministically cleaned air quality rows to Gemini for trend, hotspot, and role-action synthesis.
+ * Uses BoundedLruCache to serve repeat identical queries in O(1) without redundant LLM token consumption.
+ *
+ * @param report - Deterministic QualityReport containing normalized rows and reliability scores
+ * @returns Validated GeminiAnalysisResponse and cache hit indicator
+ */
 export async function runGeminiAnalysis(
   report: QualityReport
 ): Promise<{ data: GeminiAnalysisResponse; fromCache: boolean }> {
@@ -44,42 +130,13 @@ export async function runGeminiAnalysis(
     })),
   };
 
-  const cacheKey = hashString(JSON.stringify(payload));
+  const cacheKey = hashPayloadKey(JSON.stringify(payload));
   const cached = analysisCache.get(cacheKey);
   if (cached) {
     return { data: cached, fromCache: true };
   }
 
-  let response: Response;
-  try {
-    response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch {
-    throw new Error(
-      'Network error while connecting to /api/gemini. Please check your internet connection or serverless API status.'
-    );
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = (await response.json()) as Record<string, unknown>;
-  } catch {
-    throw new Error(
-      `Server returned status ${response.status} with a non-JSON response. Ensure the /api/gemini serverless route is active.`
-    );
-  }
-
-  if (!response.ok || !body.ok) {
-    const errMsg =
-      typeof body.error === 'string'
-        ? body.error
-        : `Gemini analysis failed with HTTP status ${response.status}.`;
-    throw new Error(errMsg);
-  }
-
+  const body = await postWithTimeout(clientConfig.apiEndpoint, payload);
   const parsed = GeminiAnalysisResponseSchema.safeParse(body.data);
   if (!parsed.success) {
     throw new Error(
@@ -93,6 +150,12 @@ export async function runGeminiAnalysis(
   return { data: parsed.data, fromCache: false };
 }
 
+/**
+ * Generates an internal municipal briefing note and public citizen advisory in the target language and reading level.
+ *
+ * @param params - Report, verified analysis, target language, reading level, and optional previous brief
+ * @returns Validated GeminiBriefResponse and cache hit indicator
+ */
 export async function runGeminiBrief(params: {
   report: QualityReport;
   analysis: GeminiAnalysisResponse;
@@ -146,42 +209,13 @@ export async function runGeminiBrief(params: {
       : null,
   };
 
-  const cacheKey = hashString(JSON.stringify(payload));
+  const cacheKey = hashPayloadKey(JSON.stringify(payload));
   const cached = briefCache.get(cacheKey);
   if (cached) {
     return { data: cached, fromCache: true };
   }
 
-  let response: Response;
-  try {
-    response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch {
-    throw new Error(
-      'Network error while connecting to /api/gemini. Please check your internet connection or serverless API status.'
-    );
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = (await response.json()) as Record<string, unknown>;
-  } catch {
-    throw new Error(
-      `Server returned status ${response.status} with a non-JSON response. Ensure the /api/gemini serverless route is active.`
-    );
-  }
-
-  if (!response.ok || !body.ok) {
-    const errMsg =
-      typeof body.error === 'string'
-        ? body.error
-        : `Brief generation failed with HTTP status ${response.status}.`;
-    throw new Error(errMsg);
-  }
-
+  const body = await postWithTimeout(clientConfig.apiEndpoint, payload);
   const parsed = GeminiBriefResponseSchema.safeParse(body.data);
   if (!parsed.success) {
     throw new Error(

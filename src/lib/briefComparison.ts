@@ -7,9 +7,16 @@ import type {
   SavedBriefRecord,
   SupportedLanguage,
 } from '../types/airQuality';
+import { getClientConfig } from './config';
 
 const STORAGE_KEY = 'civic_aq_briefs_v1';
+const clientConfig = getClientConfig();
 
+/**
+ * Loads saved air quality briefs synchronously from browser localStorage cache.
+ *
+ * @returns Array of SavedBriefRecord sorted newest-first
+ */
 export function loadSavedBriefs(): SavedBriefRecord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -21,6 +28,51 @@ export function loadSavedBriefs(): SavedBriefRecord[] {
   }
 }
 
+/**
+ * Asynchronously fetches persisted brief records from the backend `/api/records` endpoint
+ * and merges them with localStorage to ensure cross-device continuity.
+ *
+ * @returns Merged list of SavedBriefRecord sorted newest-first
+ */
+export async function syncBriefsFromServer(): Promise<SavedBriefRecord[]> {
+  const local = loadSavedBriefs();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const response = await fetch(clientConfig.recordsEndpoint, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${clientConfig.sessionToken}`,
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!response.ok) return local;
+    const data = (await response.json()) as { ok?: boolean; records?: SavedBriefRecord[] };
+    if (!data.ok || !Array.isArray(data.records)) return local;
+
+    const mergedMap = new Map<string, SavedBriefRecord>();
+    for (const item of [...data.records, ...local]) {
+      if (item && typeof item.id === 'string' && !mergedMap.has(item.id)) {
+        mergedMap.set(item.id, item);
+      }
+    }
+    const merged = Array.from(mergedMap.values())
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+      .slice(0, 15);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    return merged;
+  } catch {
+    return local;
+  }
+}
+
+/**
+ * Persists a newly generated brief record to both localStorage and the serverless `/api/records` backend.
+ *
+ * @param params - Brief metadata, quality report, Gemini analysis, and generated multilingual brief
+ * @returns Newly created SavedBriefRecord
+ */
 export function saveBriefRecord(params: {
   label: string;
   language: SupportedLanguage;
@@ -73,17 +125,44 @@ export function saveBriefRecord(params: {
   } catch {
     // Ignore storage quota errors
   }
+
+  // Non-blocking background sync to persistent serverless backend (/api/records)
+  void fetch(clientConfig.recordsEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${clientConfig.sessionToken}`,
+    },
+    body: JSON.stringify(record),
+  }).catch(() => undefined);
+
   return record;
 }
 
+/**
+ * Clears saved brief history from both localStorage and the serverless `/api/records` backend.
+ */
 export function clearSavedBriefs(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
     // Ignore
   }
+  void fetch(clientConfig.recordsEndpoint, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${clientConfig.sessionToken}`,
+    },
+  }).catch(() => undefined);
 }
 
+/**
+ * Computes deterministic longitudinal differences between the current brief and the previous baseline brief.
+ *
+ * @param current - Newly generated SavedBriefRecord
+ * @param previous - Previous baseline SavedBriefRecord
+ * @returns Structured BriefComparisonDiff with AQI deltas, ward shifts, and new/resolved hotspots
+ */
 export function computeBriefDiff(
   current: SavedBriefRecord,
   previous: SavedBriefRecord

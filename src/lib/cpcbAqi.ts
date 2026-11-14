@@ -43,6 +43,13 @@ const SO2_BREAKPOINTS: Breakpoint[] = [
   { cLow: 1600.001, cHigh: 2400, iLow: 401, iHigh: 500 },
 ];
 
+/**
+ * Performs piecewise linear interpolation across India CPCB breakpoint tables.
+ *
+ * @param value - Pollutant concentration in µg/m³
+ * @param breakpoints - CPCB breakpoint table for the specific pollutant
+ * @returns Rounded CPCB sub-index (0 to 500)
+ */
 function interpolateSubIndex(value: number, breakpoints: Breakpoint[]): number {
   if (value < 0) return 0;
   for (const bp of breakpoints) {
@@ -52,30 +59,59 @@ function interpolateSubIndex(value: number, breakpoints: Breakpoint[]): number {
       return Math.round(subIndex);
     }
   }
-  // Above highest breakpoint caps at 500 per CPCB reporting conventions
   return 500;
 }
 
+/**
+ * Calculates the India CPCB sub-index for PM2.5 concentration in µg/m³.
+ *
+ * @param pm25UgM3 - PM2.5 reading in µg/m³ or null
+ * @returns CPCB sub-index or null if reading is missing/invalid
+ */
 export function calculatePm25SubIndex(pm25UgM3: number | null): number | null {
   if (pm25UgM3 === null || Number.isNaN(pm25UgM3) || pm25UgM3 < 0) return null;
   return interpolateSubIndex(pm25UgM3, PM25_BREAKPOINTS);
 }
 
+/**
+ * Calculates the India CPCB sub-index for PM10 concentration in µg/m³.
+ *
+ * @param pm10UgM3 - PM10 reading in µg/m³ or null
+ * @returns CPCB sub-index or null if reading is missing/invalid
+ */
 export function calculatePm10SubIndex(pm10UgM3: number | null): number | null {
   if (pm10UgM3 === null || Number.isNaN(pm10UgM3) || pm10UgM3 < 0) return null;
   return interpolateSubIndex(pm10UgM3, PM10_BREAKPOINTS);
 }
 
+/**
+ * Calculates the India CPCB sub-index for NO₂ concentration in µg/m³.
+ *
+ * @param no2UgM3 - NO₂ reading in µg/m³ or null
+ * @returns CPCB sub-index or null if reading is missing/invalid
+ */
 export function calculateNo2SubIndex(no2UgM3: number | null): number | null {
   if (no2UgM3 === null || Number.isNaN(no2UgM3) || no2UgM3 < 0) return null;
   return interpolateSubIndex(no2UgM3, NO2_BREAKPOINTS);
 }
 
+/**
+ * Calculates the India CPCB sub-index for SO₂ concentration in µg/m³.
+ *
+ * @param so2UgM3 - SO₂ reading in µg/m³ or null
+ * @returns CPCB sub-index or null if reading is missing/invalid
+ */
 export function calculateSo2SubIndex(so2UgM3: number | null): number | null {
   if (so2UgM3 === null || Number.isNaN(so2UgM3) || so2UgM3 < 0) return null;
   return interpolateSubIndex(so2UgM3, SO2_BREAKPOINTS);
 }
 
+/**
+ * Maps a numeric CPCB AQI value to its official 6-band India CPCB category.
+ *
+ * @param aqi - Numeric CPCB AQI (0–500) or null
+ * @returns Official AqiCategory string
+ */
 export function getCpcbAqiCategory(aqi: number | null): AqiCategory {
   if (aqi === null || Number.isNaN(aqi) || aqi < 0) return 'Insufficient Data';
   if (aqi <= 50) return 'Good';
@@ -86,25 +122,37 @@ export function getCpcbAqiCategory(aqi: number | null): AqiCategory {
   return 'Severe';
 }
 
+/**
+ * Returns WCAG AA/AAA compliant Tailwind badge classes for a given CPCB AQI category.
+ *
+ * @param category - CPCB AqiCategory
+ * @returns Tailwind CSS class string
+ */
 export function getAqiBadgeStyle(category: AqiCategory): string {
   switch (category) {
     case 'Good':
-      return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      return 'bg-emerald-100 text-emerald-950 border-emerald-300';
     case 'Satisfactory':
-      return 'bg-lime-100 text-lime-900 border-lime-300';
+      return 'bg-lime-100 text-lime-950 border-lime-300';
     case 'Moderate':
-      return 'bg-amber-100 text-amber-900 border-amber-300';
+      return 'bg-amber-100 text-amber-950 border-amber-300';
     case 'Poor':
-      return 'bg-orange-100 text-orange-900 border-orange-300';
+      return 'bg-orange-100 text-orange-950 border-orange-300';
     case 'Very Poor':
-      return 'bg-red-100 text-red-900 border-red-300';
+      return 'bg-red-100 text-red-950 border-red-300';
     case 'Severe':
       return 'bg-rose-950 text-white border-rose-800';
     default:
-      return 'bg-slate-200 text-slate-800 border-slate-300';
+      return 'bg-slate-200 text-slate-900 border-slate-300';
   }
 }
 
+/**
+ * Computes overall row AQI, category, and dominant pollutant as the maximum sub-index across measured pollutants.
+ *
+ * @param params - Normalized concentrations for PM2.5, PM10, NO2, and SO2 in µg/m³
+ * @returns Sub-indices, overall AQI, CPCB category, and dominant pollutant
+ */
 export function computeOverallRowAqi(params: {
   pm25UgM3: number | null;
   pm10UgM3: number | null;
