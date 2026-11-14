@@ -4,6 +4,9 @@
 
 Built solo for **PromptWars (Google for Developers)** using **Google Antigravity** for agentic development and the **Google Gemini API (`gemini-2.5-flash`)** via a Vercel serverless function (`/api/gemini`).
 
+- **Live Deployed URL**: [https://app-hazel-sigma-48.vercel.app](https://app-hazel-sigma-48.vercel.app)
+- **Public GitHub Repository**: [https://github.com/snagwani/civic-air-quality-briefing-studio](https://github.com/snagwani/civic-air-quality-briefing-studio)
+
 ---
 
 ## 1. Problem & Trust-Layer Architecture
