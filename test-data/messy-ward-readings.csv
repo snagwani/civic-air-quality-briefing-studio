@@ -1,0 +1,12 @@
+Ward,Station,Timestamp,PM2.5,PM10,NO2,SO2,Units
+Ward K-West,Andheri Lokhandwala RWA Gate,14/11/2026 07:00,88,164,46,18,ug/m3
+Ward K-West,Andheri Lokhandwala RWA Gate,2026-11-14T08:00:00,96,178,0.032 ppm,21,ug/m3
+Ward K-West,Andheri Lokhandwala RWA Gate,14-11-2026 09:00,295,382,68,24,ug/m3
+Ward H-East,Bandra Kurla Municipal School,14/11/2026 07:00,0.145 mg/m3,240,58,19,ug/m3
+Ward H-East,Bandra Kurla Municipal School,14/11/2026 08:00,152,NA,64,22,ug/m3
+Ward H-East,Bandra Kurla Municipal School,14/11/2026 09:00,-18,210,55,17,ug/m3
+Ward M-East,Govandi Shivaji Nagar Depot,14/11/2026 07:00,218 ppm,412,94,38,ug/m3
+Ward M-East,Govandi Shivaji Nagar Depot,2026/11/14 08:00,242,445,108,42,ug/m3
+Ward M-East,Govandi Shivaji Nagar Depot,invalid-date-str,5400,460,112,44,ug/m3
+Ward D,Malabar Hill Reservoir Garden,14/11/2026 08:00,28,54,22,9,ug/m3
+Ward D,Malabar Hill Reservoir Garden,14/11/2026 09:00,32,62,25,11,ug/m3
